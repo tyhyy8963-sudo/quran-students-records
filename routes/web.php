@@ -1,11 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\PoemController;
 use App\Http\Controllers\Admin\TeacherAccountController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\CircleController;
 use App\Http\Controllers\RecitationLogController;
+use App\Http\Controllers\PoemRecitationLogController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ProfileController;
@@ -60,6 +62,10 @@ Route::middleware(['auth', 'auth.session', 'active'])->group(function () {
 
         Route::patch('/teachers/{teacher}/active', [TeacherAccountController::class, 'toggleActive'])->name('teachers.active');
         Route::delete('/teachers/{teacher}', [TeacherAccountController::class, 'destroy'])->name('teachers.destroy');
+
+        /* مرجع المتون (S15) — إضافة فقط، لا حذف ولا تعديل من الواجهة. */
+        Route::get('/poems', [PoemController::class, 'index'])->name('poems.index');
+        Route::post('/poems', [PoemController::class, 'store'])->name('poems.store');
     });
 
     /* تغيير كلمة المرور — للمدير على حسابه فقط.
@@ -95,6 +101,10 @@ Route::middleware(['auth', 'auth.session', 'active'])->group(function () {
         /* السجلّ الزمني لطالب (S7) */
         Route::post('/dashboard/{student}/logs', [RecitationLogController::class, 'store'])->name('logs.store');
         Route::delete('/dashboard/{student}/logs/{log}', [RecitationLogController::class, 'destroy'])->name('logs.destroy');
+
+        /* السجلّ الزمني لحفظ/مراجعة متن (S15) — مستقلّ عن logs.* أعلاه */
+        Route::post('/dashboard/{student}/poem-logs', [PoemRecitationLogController::class, 'store'])->name('poem-logs.store');
+        Route::delete('/dashboard/{student}/poem-logs/{log}', [PoemRecitationLogController::class, 'destroy'])->name('poem-logs.destroy');
 
         /* الحضور — شاشة التحضير السريعة (S9) */
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');

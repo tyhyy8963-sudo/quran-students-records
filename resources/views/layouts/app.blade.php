@@ -38,6 +38,7 @@
                 <nav class="app-nav">
                     @if (auth()->user()->isAdmin())
                         <a href="{{ route('admin.teachers.index') }}" class="{{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">حسابات المعلّمين</a>
+                        <a href="{{ route('admin.poems.index') }}" class="{{ request()->routeIs('admin.poems.*') ? 'active' : '' }}">المتون</a>
                     @else
                         <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">الطلاب</a>
                         <a href="{{ route('attendance.index') }}" class="{{ request()->routeIs('attendance.*') ? 'active' : '' }}">الحضور</a>

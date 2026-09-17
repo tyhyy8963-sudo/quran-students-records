@@ -69,7 +69,10 @@ class MemorizationProgress
             ->whereNotNull('surah_id')
             ->get(['student_id', 'surah_id', 'from_ayah', 'to_ayah']);
 
-        return $this->coverageCache[$studentId] = $this->coverageFromLogs($logs);
+        $coverage = $this->coverageFromLogs($logs);
+        $this->applyBaseline($coverage, $student);
+
+        return $this->coverageCache[$studentId] = $coverage;
     }
 
     /**
@@ -83,14 +86,15 @@ class MemorizationProgress
      */
     public function warmFor(iterable $students): void
     {
-        $ids = collect($students)
-            ->map(fn (Student $s) => (int) $s->student_id)
-            ->reject(fn (int $id) => isset($this->coverageCache[$id]))
-            ->values();
+        $studentsById = collect($students)
+            ->keyBy(fn (Student $s) => (int) $s->student_id)
+            ->reject(fn (Student $s) => isset($this->coverageCache[(int) $s->student_id]));
 
-        if ($ids->isEmpty()) {
+        if ($studentsById->isEmpty()) {
             return;
         }
+
+        $ids = $studentsById->keys()->values();
 
         $logsByStudent = RecitationLog::query()
             ->whereIn('student_id', $ids)
@@ -99,10 +103,10 @@ class MemorizationProgress
             ->get(['student_id', 'surah_id', 'from_ayah', 'to_ayah'])
             ->groupBy('student_id');
 
-        foreach ($ids as $id) {
-            $this->coverageCache[$id] = $this->coverageFromLogs(
-                $logsByStudent->get($id) ?? collect()
-            );
+        foreach ($studentsById as $id => $student) {
+            $coverage = $this->coverageFromLogs($logsByStudent->get($id) ?? collect());
+            $this->applyBaseline($coverage, $student);
+            $this->coverageCache[$id] = $coverage;
         }
     }
 
@@ -152,6 +156,40 @@ class MemorizationProgress
         }
 
         return $coverage;
+    }
+
+    /**
+     * أرضية الحفظ (S16): "آخر سورة أتمّها الطالب قبل الانضمام" — تُطبَّق كحدّ
+     * أدنى للتغطية على كل سورة تسبقها في تسلسل الحفظ (أو تساويها)، لا كسجلّ
+     * مُلفَّق. max لا استبدال: سجلّ فعلي يتجاوز الأرضية يبقى كما هو.
+     *
+     * @param  array<int, int>  $coverage
+     */
+    private function applyBaseline(array &$coverage, Student $student): void
+    {
+        $baselineId = $student->quran_baseline_surah_id;
+
+        if ($baselineId === null) {
+            return;
+        }
+
+        $baselineSurah = $this->surahs()->get($baselineId);
+
+        if ($baselineSurah === null || $baselineSurah->excluded_from_progress || $baselineSurah->memorization_order === null) {
+            return;
+        }
+
+        foreach ($this->surahs() as $surah) {
+            if ($surah->excluded_from_progress || $surah->memorization_order === null) {
+                continue;
+            }
+
+            if ($surah->memorization_order > $baselineSurah->memorization_order) {
+                continue;
+            }
+
+            $coverage[$surah->id] = max($coverage[$surah->id] ?? 0, $surah->ayah_count);
+        }
     }
 
     /**

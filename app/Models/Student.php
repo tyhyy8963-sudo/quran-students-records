@@ -17,7 +17,6 @@ class Student extends Model
         'active'      => 'نشط',
         'inactive'    => 'منقطع',
         'transferred' => 'منتقل',
-        'graduated'   => 'متخرّج',
     ];
 
     protected $primaryKey = 'student_id';
@@ -31,6 +30,7 @@ class Student extends Model
         'teacher_id',
         'circle_id',
         'status',
+        'quran_baseline_surah_id',
     ];
 
     protected $casts = [
@@ -73,11 +73,30 @@ class Student extends Model
         return $this->belongsTo(Circle::class, 'circle_id', 'id');
     }
 
+    /** أرضية الحفظ (S16): آخر سورة أتمّها الطالب قبل الانضمام، إن وُجدت. */
+    public function quranBaselineSurah()
+    {
+        return $this->belongsTo(Surah::class, 'quran_baseline_surah_id', 'id');
+    }
+
     public function recitationLogs()
     {
         return $this->hasMany(RecitationLog::class, 'student_id', 'student_id')
             ->orderByDesc('logged_at')
             ->orderByDesc('id');
+    }
+
+    public function poemRecitationLogs()
+    {
+        return $this->hasMany(PoemRecitationLog::class, 'student_id', 'student_id')
+            ->orderByDesc('logged_at')
+            ->orderByDesc('id');
+    }
+
+    /** أرضية المتون (S16): آخر بيت أتمّه الطالب من كل متن قبل الانضمام. */
+    public function poemBaselines()
+    {
+        return $this->hasMany(StudentPoemBaseline::class, 'student_id', 'student_id');
     }
 
     public function attendances()
@@ -129,5 +148,16 @@ class Student extends Model
     public function statusLabel(): string
     {
         return self::STATUSES[$this->status] ?? $this->status ?? self::STATUSES['active'];
+    }
+
+    /**
+     * أتمّ حفظ القرآن كاملًا؟ وسم منفصل لا حالة بديلة (S16) — "متخرّج" كانت
+     * حالة في status تتعارض مع inactive/transferred (طالب متخرّج قد يبقى
+     * منتقلًا أو منقطعًا)، بينما هذا وسم يُحسَب من نسبة الحفظ الفعلية دائمًا،
+     * فلا يتيه من التحديث اليدوي لحقل status.
+     */
+    public function hasCompletedQuran(): bool
+    {
+        return $this->progressPercentage() >= 100.0;
     }
 }

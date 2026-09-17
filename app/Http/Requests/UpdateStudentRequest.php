@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Student;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class UpdateStudentRequest extends FormRequest
         return [
             'student_name' => ['required', 'string', 'max:255'],
             'circle_id'    => ['nullable', 'integer', Rule::exists('circles', 'id')->where('teacher_id', $this->user()?->id)],
-            'status'       => ['sometimes', 'string', 'in:active,inactive,transferred,graduated'],
+            'status'       => ['sometimes', 'string', Rule::in(array_keys(Student::STATUSES))],
         ];
     }
 

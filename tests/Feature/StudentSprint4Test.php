@@ -201,15 +201,15 @@ class StudentSprint4Test extends TestCase
         $this->actingAs($teacher)
             ->patchJson('/dashboard/'.$student->student_id, [
                 'student_name' => 'يوسف',
-                'status'       => 'graduated',
+                'status'       => 'transferred',
             ])
             ->assertOk()
-            ->assertJsonPath('data.status', 'graduated')
-            ->assertJsonPath('data.status_label', 'متخرّج');
+            ->assertJsonPath('data.status', 'transferred')
+            ->assertJsonPath('data.status_label', 'منتقل');
 
         $this->assertDatabaseHas('students', [
             'student_id' => $student->student_id,
-            'status'     => 'graduated',
+            'status'     => 'transferred',
         ]);
     }
 
