@@ -1,0 +1,200 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Attendance;
+use App\Models\Student;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+/**
+ * الحضور (S9) — الشاشة السريعة (حفظ دفعة)، منع التسجيل المستقبلي، الملكية،
+ * ومؤشّر الانقطاع البسيط على اللوحة.
+ */
+class AttendanceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $teacher;
+    private Student $student;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->teacher = User::create([
+            'name'      => 'الأستاذ سعد',
+            'username'     => 'saad',
+            'password'  => Hash::make('secret123'),
+            'mosque'    => 'جامع السلام',
+            'classroom' => 'حلقة الفجر',
+        ]);
+
+        $this->student = Student::create(['student_name' => 'عمر', 'teacher_id' => $this->teacher->id]);
+    }
+
+    /** @test */
+    public function a_teacher_can_mark_attendance_for_their_students(): void
+    {
+        $this->actingAs($this->teacher)
+            ->postJson('/attendance', [
+                'date' => now()->toDateString(),
+                'entries' => [
+                    ['student_id' => $this->student->student_id, 'status' => 'حاضر'],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonStructure(['data' => ['date', 'count'], 'message']);
+
+        // لا نقارن عمود "date" مباشرة في assertDatabaseHas: كاست "date" على
+        // الموديل يمرّر القيمة عبر fromDateTime عند الإسناد، فتُخزَّن على
+        // SQLite (بيئة الاختبار) بصيغة تاريخ ووقت كاملة رغم إرسال تاريخ فقط
+        // — تفصيل تخزين داخلي لا يؤثّر على القراءة عبر whereDate()، فهو
+        // ليس عطلًا يستحق اختباره هنا.
+        $this->assertTrue(
+            Attendance::where('student_id', $this->student->student_id)
+                ->where('status', 'حاضر')
+                ->whereDate('date', now()->toDateString())
+                ->exists()
+        );
+    }
+
+    /** @test */
+    public function marking_the_same_day_twice_updates_the_existing_row_instead_of_duplicating(): void
+    {
+        $date = now()->toDateString();
+
+        $this->actingAs($this->teacher)->postJson('/attendance', [
+            'date' => $date,
+            'entries' => [['student_id' => $this->student->student_id, 'status' => 'حاضر']],
+        ])->assertOk();
+
+        $this->actingAs($this->teacher)->postJson('/attendance', [
+            'date' => $date,
+            'entries' => [['student_id' => $this->student->student_id, 'status' => 'غائب']],
+        ])->assertOk();
+
+        $this->assertEquals(
+            1,
+            Attendance::where('student_id', $this->student->student_id)->whereDate('date', $date)->count()
+        );
+        $this->assertTrue(
+            Attendance::where('student_id', $this->student->student_id)
+                ->where('status', 'غائب')
+                ->whereDate('date', $date)
+                ->exists()
+        );
+    }
+
+    /** @test */
+    public function future_dates_are_rejected(): void
+    {
+        $this->actingAs($this->teacher)
+            ->postJson('/attendance', [
+                'date' => now()->addDay()->toDateString(),
+                'entries' => [['student_id' => $this->student->student_id, 'status' => 'حاضر']],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['date']);
+    }
+
+    /** @test */
+    public function an_unknown_status_is_rejected(): void
+    {
+        $this->actingAs($this->teacher)
+            ->postJson('/attendance', [
+                'date' => now()->toDateString(),
+                'entries' => [['student_id' => $this->student->student_id, 'status' => 'مريض']],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['entries.0.status']);
+    }
+
+    /** @test */
+    public function a_teacher_cannot_mark_attendance_for_another_teachers_student(): void
+    {
+        $other = User::create([
+            'name' => 'أستاذ آخر', 'username' => 'other_attendance', 'password' => Hash::make('secret123'),
+            'mosque' => 'جامع', 'classroom' => 'حلقة',
+        ]);
+
+        $this->actingAs($other)
+            ->postJson('/attendance', [
+                'date' => now()->toDateString(),
+                'entries' => [['student_id' => $this->student->student_id, 'status' => 'حاضر']],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['entries.0.student_id']);
+    }
+
+    /** @test */
+    public function two_consecutive_absences_trigger_the_dashboard_alert(): void
+    {
+        $this->student->attendances()->create(['date' => now()->subDays(2), 'status' => 'غائب']);
+        $this->student->attendances()->create(['date' => now()->subDay(), 'status' => 'غائب']);
+
+        $this->actingAs($this->teacher)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('انقطاع');
+    }
+
+    /** @test */
+    public function a_present_day_after_an_absence_clears_the_alert(): void
+    {
+        $this->student->attendances()->create(['date' => now()->subDays(2), 'status' => 'غائب']);
+        $this->student->attendances()->create(['date' => now()->subDay(), 'status' => 'حاضر']);
+
+        $this->actingAs($this->teacher)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('انقطاع');
+    }
+
+    /** @test */
+    public function the_student_page_shows_the_attendance_calendar_for_the_recorded_month(): void
+    {
+        $recordedDate = now()->startOfMonth()->addDays(4);
+        $this->student->attendances()->create(['date' => $recordedDate, 'status' => 'غائب']);
+
+        $this->actingAs($this->teacher)
+            ->get("/dashboard/{$this->student->student_id}")
+            ->assertOk()
+            ->assertSee('data-status="غائب"', false);
+    }
+
+    /**
+     * انحدار: كاست "date" يخزّن وقتًا كاملاً خلف التاريخ على SQLite، وكانت
+     * الشاشة السريعة تقارن نص التاريخ الخام (where بدل whereDate) فتفشل
+     * مطابقة سطر اليوم نفسه دائمًا — الأزرار تظهر فارغة رغم وجود تسجيل فعلي.
+     */
+    /** @test */
+    public function the_quick_checkin_screen_shows_the_already_recorded_status_for_today(): void
+    {
+        $this->student->attendances()->create(['date' => now(), 'status' => 'متأخر']);
+
+        $this->actingAs($this->teacher)
+            ->get('/attendance')
+            ->assertOk()
+            ->assertSee('status-btn selected', false);
+    }
+
+    /**
+     * انحدار مماثل: تقويم الشهر كان يستخدم whereBetween على نص التاريخ
+     * الخام، فيستثني سطر آخر يوم في الشهر (قيمته المخزَّنة "أكبر" نصيًا من
+     * حدّ النهاية بلا وقت).
+     */
+    /** @test */
+    public function the_calendar_includes_the_last_day_of_the_month(): void
+    {
+        $lastDay = now()->endOfMonth()->startOfDay();
+        $this->student->attendances()->create(['date' => $lastDay, 'status' => 'غائب']);
+
+        $this->actingAs($this->teacher)
+            ->get("/dashboard/{$this->student->student_id}")
+            ->assertOk()
+            ->assertSee('data-status="غائب"', false);
+    }
+}
