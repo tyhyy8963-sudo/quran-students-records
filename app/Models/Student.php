@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Scopes\TeacherScope;
 use App\Support\MemorizationProgress;
+use App\Support\PoemProgress;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,7 +31,6 @@ class Student extends Model
         'teacher_id',
         'circle_id',
         'status',
-        'quran_baseline_surah_id',
     ];
 
     protected $casts = [
@@ -73,12 +73,6 @@ class Student extends Model
         return $this->belongsTo(Circle::class, 'circle_id', 'id');
     }
 
-    /** أرضية الحفظ (S16): آخر سورة أتمّها الطالب قبل الانضمام، إن وُجدت. */
-    public function quranBaselineSurah()
-    {
-        return $this->belongsTo(Surah::class, 'quran_baseline_surah_id', 'id');
-    }
-
     public function recitationLogs()
     {
         return $this->hasMany(RecitationLog::class, 'student_id', 'student_id')
@@ -91,12 +85,6 @@ class Student extends Model
         return $this->hasMany(PoemRecitationLog::class, 'student_id', 'student_id')
             ->orderByDesc('logged_at')
             ->orderByDesc('id');
-    }
-
-    /** أرضية المتون (S16): آخر بيت أتمّه الطالب من كل متن قبل الانضمام. */
-    public function poemBaselines()
-    {
-        return $this->hasMany(StudentPoemBaseline::class, 'student_id', 'student_id');
     }
 
     public function attendances()
@@ -121,6 +109,52 @@ class Student extends Model
     }
 
     /**
+     * آخر موضع مراجعة جديد مسجَّل (S15) — نظير latestMemorizationLog تمامًا،
+     * لكن لنوع "مراجعة"، حتى تعرض بطاقة الطالب آخر موضعين لا موضعًا واحدًا:
+     * أين وصل حفظًا، وأين وصل مراجعةً (وقد يختلفان تمامًا).
+     */
+    public function latestReviewLog()
+    {
+        return $this->hasOne(RecitationLog::class, 'student_id', 'student_id')
+            ->ofMany(['logged_at' => 'max', 'id' => 'max'], function ($query) {
+                $query->where('type', 'مراجعة');
+            });
+    }
+
+    /**
+     * المتون التي يتتبّعها الطالب فعليًا (S15) — التتبّع متوازٍ لا تسلسلي (قرار
+     * صريح): قد يعمل الطالب على أكثر من متن من الخمسة معًا، فلا معنى لـ"المتن
+     * النشط الحالي" الواحد. متن "يُتتبَّع" إن كان له سجلّ حفظ/مراجعة واحد على
+     * الأقل.
+     *
+     * (S24 — بطلب صريح من يحيى): كانت "أرضية متن" يدوية (student_poem_baselines)
+     * مصدرًا ثانيًا هنا أيضًا. أُلغيت نهائيًا لنفس السبب الذي أُلغيت به أرضية
+     * حفظ القرآن اليدوية سابقًا (راجع MemorizationProgress) — لا إدخال يدوي
+     * لـ"ما قبل الانضمام"، الاعتماد كليًا على السجلّات الفعلية المسجَّلة.
+     *
+     * @return \Illuminate\Support\Collection<int, Poem>
+     */
+    public function trackedPoems()
+    {
+        $ids = $this->poemRecitationLogs()->pluck('poem_id')->unique()->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return Poem::whereIn('id', $ids)->orderBy('name')->get();
+    }
+
+    /** آخر سطر حفظ أو مراجعة لمتن معيّن — نظير latestMemorizationLog/latestReviewLog لكن للمتون (S15). */
+    public function latestPoemLog(int $poemId, string $type): ?PoemRecitationLog
+    {
+        return $this->poemRecitationLogs()
+            ->where('poem_id', $poemId)
+            ->where('type', $type)
+            ->first();
+    }
+
+    /**
      * نسبة الحفظ بترتيب الحفظ المعكوس: الناس ≈ 1% … البقرة = 100% (S14).
      *
      * الحساب كلّه في MemorizationProgress — صنف واحد تستدعيه اللوحة وصفحة
@@ -131,6 +165,12 @@ class Student extends Model
     public function progressPercentage(): float
     {
         return app(MemorizationProgress::class)->percentage($this);
+    }
+
+    /** نسبة حفظ متن معيّن للطالب (S15) — واجهة مريحة فوق PoemProgress، بنفس فلسفة progressPercentage(). */
+    public function poemProgressPercentage(Poem $poem): float
+    {
+        return app(PoemProgress::class)->percentage($this, $poem);
     }
 
     /** أبعد سورة بلغها الطالب في تسلسل الحفظ (مكتملة أو قيد الحفظ). */
@@ -159,5 +199,45 @@ class Student extends Model
     public function hasCompletedQuran(): bool
     {
         return $this->progressPercentage() >= 100.0;
+    }
+
+    /** أتمّ حفظ متن معيّن بالكامل؟ نظير hasCompletedQuran لكن لمتن واحد (S15). */
+    public function hasCompletedPoem(Poem $poem): bool
+    {
+        return $this->poemProgressPercentage($poem) >= 100.0;
+    }
+
+    /**
+     * عدد المتون المتتبَّعة لكل طالب من مجموعة طلاب دفعة واحدة (S18) — لعرض
+     * شارة مختصرة "٢ متن متتبَّع" في اللوحة الرئيسية بلا استعلام trackedPoems()
+     * لكل طالب على حدة (N+1 في صفحة فيها خمسون طالبًا). لا يحسب نِسَبًا — تلك
+     * موجودة بدقّة في صفحة الطالب نفسها (S15/S16)، وحسابها لخمسين طالبًا معًا
+     * هنا مكلف بلا داعٍ لمجرّد شارة عدد.
+     *
+     * (S24) كان مصدر ثانٍ هنا أيضًا student_poem_baselines (الأرضية اليدوية
+     * المُلغاة) — راجع تعليق trackedPoems() أعلاه لسبب الإلغاء الكامل.
+     *
+     * @return array<int, int> [student_id => عدد المتون المتتبَّعة]
+     */
+    public static function trackedPoemCountsFor($studentIds): array
+    {
+        $ids = collect($studentIds)->map(fn ($id) => (int) $id)->all();
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        $fromLogs = PoemRecitationLog::query()
+            ->whereIn('student_id', $ids)
+            ->select('student_id', 'poem_id')
+            ->distinct()
+            ->get();
+
+        $poemIdsByStudent = [];
+        foreach ($fromLogs as $row) {
+            $poemIdsByStudent[$row->student_id][$row->poem_id] = true;
+        }
+
+        return array_map('count', $poemIdsByStudent);
     }
 }

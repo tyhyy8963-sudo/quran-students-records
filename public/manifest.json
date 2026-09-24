@@ -1,7 +1,7 @@
 {
-    "name": "كشف المتابعة",
-    "short_name": "كشف المتابعة",
-    "description": "متابعة حفظ القرآن والحضور للمعلّمين",
+    "name": "رِواق",
+    "short_name": "رِواق",
+    "description": "رِواق — متابعة حفظ القرآن ومراجعته وحضور الطلاب للمعلّمين",
     "start_url": "/dashboard",
     "scope": "/",
     "display": "standalone",

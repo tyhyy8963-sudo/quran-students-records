@@ -56,11 +56,16 @@ class StudentStatusTest extends TestCase
     }
 
     /** @test */
-    public function has_completed_quran_is_true_at_one_hundred_percent_via_baseline(): void
+    public function has_completed_quran_is_true_at_one_hundred_percent_via_the_automatic_cascade(): void
     {
-        // أرضية عند البقرة (الخطوة 113، الأخيرة) = أتمّ كل السلّم بلا سجلّات.
-        $this->student->update([
-            'quran_baseline_surah_id' => Surah::where('number', 2)->firstOrFail()->id,
+        // البقرة هي الخطوة الأخيرة (113) في ترتيب الحفظ — تسجيلها كاملة يُكمل
+        // السلّم بأسره تلقائيًا (S15، مصحَّح): لا أرضية يدوية بعد الآن، بل
+        // انسياب MemorizationProgress::applyCascade() من أبعد سورة مسجَّلة فعليًا.
+        $baqarah = Surah::where('number', 2)->firstOrFail();
+
+        $this->student->recitationLogs()->create([
+            'surah_id' => $baqarah->id, 'from_ayah' => 1, 'to_ayah' => $baqarah->ayah_count,
+            'type' => 'حفظ', 'logged_at' => now()->toDateString(),
         ]);
 
         $this->assertTrue($this->student->fresh()->hasCompletedQuran());

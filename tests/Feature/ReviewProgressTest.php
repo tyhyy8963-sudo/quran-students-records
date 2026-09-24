@@ -8,6 +8,7 @@ use App\Models\Surah;
 use App\Models\User;
 use App\Support\ReviewProgress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -110,5 +111,139 @@ class ReviewProgressTest extends TestCase
     public function a_student_with_no_review_logs_has_zero_percent(): void
     {
         $this->assertSame(0.0, $this->progress->percentage($this->student));
+    }
+
+    /** @test */
+    public function a_review_spanning_two_surahs_is_treated_as_one_continuous_range(): void
+    {
+        // مراجعة عابرة لعدّة سور (S16): الأعلى (87) كاملة ثم الغاشية (88)
+        // كاملة في سطر واحد. الربع 237 يبدأ عند الأعلى:1 بالضبط (بيانات
+        // quarters الحقيقية)، وطوله يتّسع للسورتين معًا (يشاركه أصلًا
+        // الغاشية والفجر في التصميم الحقيقي للمصحف) — تحقّق دفاعي بدل افتراض
+        // صامت قد ينكسر لو تغيّرت بيانات المرجع يومًا ما.
+        $ala = $this->surah(87);
+        $ghashiyah = $this->surah(88);
+
+        $quarter237 = Quarter::where('quarter_number', 237)->firstOrFail();
+        $quarter238 = Quarter::where('quarter_number', 238)->firstOrFail();
+        $this->assertSame(1, $quarter237->start_ayah);
+        $this->assertSame($ala->id, $quarter237->start_surah_id);
+
+        $quarter237Length = $quarter238->start_global_ayah - $quarter237->start_global_ayah;
+        $totalCovered = $ala->ayah_count + $ghashiyah->ayah_count;
+
+        $this->assertLessThanOrEqual(
+            $quarter237Length,
+            $totalCovered,
+            'الافتراض: الأعلى والغاشية بالكامل تقعان داخل الربع 237 نفسه.'
+        );
+
+        $this->student->recitationLogs()->create([
+            'surah_id'    => $ala->id,
+            'to_surah_id' => $ghashiyah->id,
+            'from_ayah'   => 1,
+            'to_ayah'     => $ghashiyah->ayah_count,
+            'type'        => 'مراجعة',
+            'logged_at'   => now()->toDateString(),
+        ]);
+        $this->progress->forget($this->student);
+
+        // لو استُعمِلت نهاية "الأعلى" نفسها خطأً (تجاهُل to_surah_id) لكانت
+        // التغطية محصورة بعدد آيات الأعلى فقط لا مجموع السورتين معًا.
+        $this->assertSame($totalCovered, $this->progress->coverage($this->student)[237]);
+
+        $expected = round(($totalCovered / $quarter237Length) / Quarter::COUNT * 100, 1);
+        $this->assertSame($expected, $this->progress->percentage($this->student));
+    }
+
+    /** @test */
+    public function quarters_fully_reviewed_counts_only_complete_quarters(): void
+    {
+        $this->log(2, 26, 43); // الربع 2 كاملًا (18 آية)
+        $this->log(2, 44, 50); // جزء فقط من الربع 3 (7 من 16 آية)
+
+        $this->assertSame(1, $this->progress->quartersFullyReviewed($this->student));
+    }
+
+    /** @test */
+    public function monthly_activity_counts_any_quarter_touched_within_that_calendar_month(): void
+    {
+        Carbon::setTestNow('2026-06-15');
+
+        // الربع 2 (26..43) — تسجيل مراجعة جزئية فقط (9 من 18 آية) لا تزال
+        // "تمسّ" الربع فتُحتسَب، خلافًا لـquartersFullyReviewed() التي تشترط
+        // الاكتمال الكامل.
+        $this->log(2, 26, 34);
+
+        $activity = $this->progress->monthlyActivity($this->student, 3);
+
+        $this->assertSame(3, $activity->count());
+        $this->assertSame('2026-06', $activity->last()['month']);
+        $this->assertSame(1, $activity->last()['quarters']);
+
+        Carbon::setTestNow();
+    }
+
+    /** @test */
+    public function monthly_activity_does_not_count_a_review_toward_an_adjacent_month(): void
+    {
+        Carbon::setTestNow('2026-06-15');
+
+        $this->student->recitationLogs()->create([
+            'surah_id' => $this->surah(2)->id, 'from_ayah' => 26, 'to_ayah' => 43,
+            'type' => 'مراجعة', 'logged_at' => '2026-05-10',
+        ]);
+        $this->progress->forget($this->student);
+
+        $activity = $this->progress->monthlyActivity($this->student, 3);
+        $byMonth = $activity->keyBy('month');
+
+        $this->assertSame(0, $byMonth['2026-06']['quarters']);
+        $this->assertSame(1, $byMonth['2026-05']['quarters']);
+        $this->assertSame(0, $byMonth['2026-04']['quarters']);
+
+        Carbon::setTestNow();
+    }
+
+    /** @test */
+    public function monthly_activity_counts_distinct_quarters_not_log_lines(): void
+    {
+        Carbon::setTestNow('2026-06-15');
+
+        // سطران مختلفان لكن كلاهما يمسّان الربع نفسه (2) فقط — يُحتسَب مرّة
+        // واحدة لا مرّتين.
+        $this->student->recitationLogs()->create([
+            'surah_id' => $this->surah(2)->id, 'from_ayah' => 26, 'to_ayah' => 30,
+            'type' => 'مراجعة', 'logged_at' => '2026-06-05',
+        ]);
+        $this->student->recitationLogs()->create([
+            'surah_id' => $this->surah(2)->id, 'from_ayah' => 31, 'to_ayah' => 34,
+            'type' => 'مراجعة', 'logged_at' => '2026-06-12',
+        ]);
+        $this->progress->forget($this->student);
+
+        $activity = $this->progress->monthlyActivity($this->student, 1);
+
+        $this->assertSame(1, $activity->count());
+        $this->assertSame(1, $activity->first()['quarters']);
+
+        Carbon::setTestNow();
+    }
+
+    /** @test */
+    public function monthly_activity_defaults_to_six_months_ordered_oldest_first(): void
+    {
+        Carbon::setTestNow('2026-06-15');
+
+        $activity = $this->progress->monthlyActivity($this->student);
+
+        $expectedLabel = Carbon::create(2026, 6, 15)->translatedFormat('F Y');
+
+        $this->assertSame(6, $activity->count());
+        $this->assertSame('2026-01', $activity->first()['month']);
+        $this->assertSame('2026-06', $activity->last()['month']);
+        $this->assertSame($expectedLabel, $activity->last()['label']);
+
+        Carbon::setTestNow();
     }
 }

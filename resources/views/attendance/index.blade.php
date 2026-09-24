@@ -1,10 +1,22 @@
 @extends('layouts.app')
 
-@section('title', 'الحضور - كشف المتابعة')
+@section('title', 'سجلّ الحضور والغياب - رِواق')
 
 @section('content')
+    {{--
+        عرض فقط (تصحيح S23) — كانت هذه الشاشة موضع تجربة موسَّعة لتسجيل الدرس
+        والمراجعة أيضًا بناءً على فهم خاطئ لمكان "الصفحة الرئيسية"، صُحِّح
+        صراحةً من يحيى: "تبويب الحضور والغياب هو فقط لعرض سجلات الحضور
+        والغياب". لا أزرار تسجيل ولا نماذج هنا — التسجيل الفعلي صار من اللوحة
+        الرئيسية (/dashboard) عبر نافذة تسجيل الحضور هناك، وهذه الشاشة تعرض
+        نتيجة يوم واحد فقط.
+    --}}
+    @php
+        $baseParams = collect(request()->query())->except(['circle_id'])->all();
+    @endphp
+
     <div class="page-title-row">
-        <h1 class="mt-0">التحضير السريع</h1>
+        <h1 class="mt-0">سجلّ الحضور والغياب</h1>
     </div>
 
     <div class="attendance-toolbar">
@@ -12,38 +24,48 @@
             <label class="field-label" for="attendanceDate">اليوم</label>
             <input class="input" type="date" id="attendanceDate" value="{{ $date }}" max="{{ now()->toDateString() }}">
         </div>
-        <div class="field">
-            <label class="field-label" for="attendanceCircle">الحلقة</label>
-            <select class="input" id="attendanceCircle">
-                <option value="">كل الحلقات</option>
-                @foreach ($circles as $circle)
-                    <option value="{{ $circle->id }}" @selected((string) $circleId === (string) $circle->id)>{{ $circle->name }}</option>
-                @endforeach
-            </select>
-        </div>
     </div>
 
-    <div class="attendance-list" id="attendanceList">
+    <div class="circle-tabs">
+        <a class="circle-tab {{ ! $circleId ? 'active' : '' }}"
+           href="{{ url('/attendance') }}?{{ http_build_query($baseParams) }}">الكل</a>
+        @foreach ($circles as $circle)
+            <a class="circle-tab {{ (string) $circleId === (string) $circle->id ? 'active' : '' }}"
+               href="{{ url('/attendance') }}?{{ http_build_query($baseParams + ['circle_id' => $circle->id]) }}">{{ $circle->name }}</a>
+        @endforeach
+    </div>
+
+    <div class="students-table" id="attendanceRecordsList">
         @forelse ($students as $student)
-            @php $today = $student->attendances->first(); @endphp
-            <div class="attendance-row" data-student-id="{{ $student->student_id }}">
-                <div class="who">
-                    <span>{{ $student->student_name }}</span>
-                    @if ($student->circle)
-                        <span class="circle-name">— {{ $student->circle->name }}</span>
+            @php $attendance = $student->attendances->first(); @endphp
+            <div class="student-row attendance-record-row">
+                <div>
+                    <span class="column-label">اسم الطالب</span>
+                    <span class="position-display">{{ $student->student_name }}</span>
+                </div>
+                <div>
+                    <span class="column-label">الحلقة</span>
+                    <span class="position-display">{{ $student->circle->name ?? 'بلا حلقة' }}</span>
+                </div>
+                <div>
+                    <span class="column-label">حالة الحضور</span>
+                    {{-- (S30 — استكمال نمط هرماس لبقيّة الصفحات، بطلب يحيى "أبدأ
+                         فيها كلها"): كانت هذه الشارة `.status-pill` بألوان قديمة
+                         مختلفة عن كبسولة `.chip-attendance` (الألوان المقيسة من
+                         مخطّط هرماس) المستعملة لنفس البيانات بالضبط في لوحتَي
+                         "قرآن"/"المتون" — نفس حالة الحضور المشتركة، شكلان
+                         مختلفان. صارت الآن نفس الكبسولة حرفيًا (بلا زرّ/نافذة،
+                         الصفحة تبقى للعرض فقط كما تقرّر سابقًا). --}}
+                    @if ($attendance)
+                        <span class="chip chip-attendance" data-status="{{ $attendance->status }}">{{ $attendance->status }}</span>
+                    @else
+                        <span class="text-muted">لم يُسجَّل بعد</span>
                     @endif
                 </div>
-                <div class="attendance-status-group">
-                    @foreach (\App\Models\Attendance::STATUSES as $value => $label)
-                        <button type="button"
-                                class="status-btn {{ optional($today)->status === $value ? 'selected' : '' }}"
-                                data-status="{{ $value }}">
-                            {{ $label }}
-                        </button>
-                    @endforeach
+                <div>
+                    <span class="column-label">ملاحظة</span>
+                    <span class="text-muted">{{ $attendance->notes ?? '—' }}</span>
                 </div>
-                <input type="text" class="input note-input" placeholder="ملاحظة (اختياري)"
-                       aria-label="ملاحظة حضور {{ $student->student_name }}" maxlength="500" value="{{ optional($today)->notes }}">
             </div>
         @empty
             <div class="empty-state">
@@ -57,65 +79,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const { apiFetchQueueable, toast } = window.KeshfApp;
-
     const dateInput = document.getElementById('attendanceDate');
-    const circleSelect = document.getElementById('attendanceCircle');
-    const list = document.getElementById('attendanceList');
 
-    function reloadWithParams() {
-        const params = new URLSearchParams();
+    dateInput.addEventListener('change', () => {
+        const params = new URLSearchParams(window.location.search);
         params.set('date', dateInput.value);
-        if (circleSelect.value) params.set('circle_id', circleSelect.value);
         window.location.search = params.toString();
-    }
-
-    dateInput.addEventListener('change', reloadWithParams);
-    circleSelect.addEventListener('change', reloadWithParams);
-
-    async function saveEntry(row, status) {
-        const studentId = Number(row.dataset.studentId);
-        const notes = row.querySelector('.note-input').value.trim();
-        const studentName = row.querySelector('.who span')?.textContent ?? 'حضور';
-
-        try {
-            // Queueable: لا اتصال الآن يعني حفظًا محليًا مؤقتًا لا فشلًا (S12) —
-            // يُعاد إرساله تلقائيًا فور عودة الشبكة (انظر flushOfflineQueue في app.js).
-            const res = await apiFetchQueueable('/attendance', {
-                method: 'POST',
-                body: {
-                    date: dateInput.value,
-                    entries: [{ student_id: studentId, status, notes: notes || null }],
-                },
-            }, `حضور ${studentName}`);
-            row.querySelectorAll('.status-btn').forEach((b) => b.classList.toggle('selected', b.dataset.status === status));
-            if (!res.queued) toast('تم حفظ الحضور.', 'success');
-        } catch (error) {
-            if (error.status === 422 && error.errors) {
-                toast(Object.values(error.errors)[0][0], 'error');
-            } else if (error.status !== 419) {
-                toast(error.message, 'error');
-            }
-        }
-    }
-
-    list.addEventListener('click', (e) => {
-        const btn = e.target.closest('.status-btn');
-        if (!btn) return;
-        const row = btn.closest('.attendance-row');
-        saveEntry(row, btn.dataset.status);
-    });
-
-    list.querySelectorAll('.note-input').forEach((input) => {
-        let timer;
-        input.addEventListener('input', () => {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
-                const row = input.closest('.attendance-row');
-                const selected = row.querySelector('.status-btn.selected');
-                if (selected) saveEntry(row, selected.dataset.status);
-            }, 700);
-        });
     });
 });
 </script>

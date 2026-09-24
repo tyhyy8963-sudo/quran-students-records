@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'تعديل الملف الشخصي - كشف المتابعة')
+@section('title', 'تعديل الملف الشخصي - رِواق')
 
 @section('content')
     <div class="card card-pad auth-card" style="margin-inline: auto;">

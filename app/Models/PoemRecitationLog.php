@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Model;
  * لا يُعدَّل بعد إنشائه، يُحذف فقط عبر "تراجع" فور إضافته. مستقلّ كليًا عن
  * recitation_logs (قرار صريح: لا مفتاح مشترك ولا استعلام مشترك).
  *
- * يعيد استخدام RecitationLog::TYPES وRecitationLog::GRADES لأن النوع والتقييم
- * نفس المفهوم حرفيًا لحفظ القرآن أو متن — لا حاجة لنسخة ثانية من نفس القيم.
+ * يعيد استخدام RecitationLog::TYPES وRecitationLog::STATUSES (S22: كانت
+ * GRADES قبل إلغائها) لأن النوع وحالة الحفظ نفس المفهوم حرفيًا لحفظ القرآن
+ * أو متن — لا حاجة لنسخة ثانية من نفس القيم.
  */
 class PoemRecitationLog extends Model
 {
     protected $fillable = [
-        'student_id', 'poem_id', 'from_bayt', 'to_bayt', 'type', 'grade', 'notes', 'logged_at',
+        'student_id', 'poem_id', 'from_bayt', 'to_bayt', 'type', 'status', 'notes', 'logged_at',
     ];
 
     protected $casts = [

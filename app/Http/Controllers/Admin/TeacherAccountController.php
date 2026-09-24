@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Support\AccountPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use RuntimeException;
 
 /**
@@ -90,6 +91,38 @@ class TeacherAccountController extends Controller
                 'password' => $plainPassword,
                 'context'  => 'reset',
             ]);
+    }
+
+    /**
+     * تعديل اسم مستخدم معلّم (طلب صريح من يحيى بعد ملاحظته أن التعديل المتاح
+     * من هذه الشاشة كان يشمل كلمة المرور فقط دون اسم المستخدم).
+     *
+     * نفس قواعد اسم المستخدم المستعملة عند الإنشاء (StoreTeacherAccountRequest)
+     * حرفيًا — لاتينية/أرقام/شرطة سفلية فقط، 3-50 محرفًا — مع استثناء وحيد:
+     * فحص التفرّد (unique) يتجاهل صفّ المعلّم نفسه حتى لا يُرفض حفظ نفس الاسم
+     * الحالي بلا تغيير فعلي.
+     */
+    public function updateUsername(Request $request, User $teacher)
+    {
+        $this->assertManageable($teacher);
+
+        $validated = $request->validate([
+            'username' => [
+                'required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z0-9_]+$/',
+                Rule::unique('users', 'username')->ignore($teacher->id),
+            ],
+        ], [
+            'username.required' => 'الرجاء إدخال اسم المستخدم.',
+            'username.min'      => 'اسم المستخدم يجب أن يكون 3 محارف أو أكثر.',
+            'username.regex'    => 'اسم المستخدم يقبل الحروف اللاتينية والأرقام والشرطة السفلية فقط.',
+            'username.unique'   => 'اسم المستخدم مستخدم بالفعل — اختر غيره.',
+        ]);
+
+        $teacher->forceFill(['username' => $validated['username']])->save();
+
+        return redirect()
+            ->route('admin.teachers.index')
+            ->with('success', "تم تغيير اسم مستخدم {$teacher->name} إلى \"{$teacher->username}\".");
     }
 
     /**

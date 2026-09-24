@@ -5,7 +5,7 @@ namespace App\Support;
 use App\Models\PoemRecitationLog;
 use App\Models\Poem;
 use App\Models\Student;
-use App\Models\StudentPoemBaseline;
+use Illuminate\Support\Collection;
 
 /**
  * حساب نسبة حفظ متن (S15) — نفس فلسفة MemorizationProgress لكن الوحدة "بيت"
@@ -15,8 +15,11 @@ use App\Models\StudentPoemBaseline;
  * اتحاد مديات from_bayt..to_bayt المتداخلة (نفس مشكلة تسجيل متن طويل عبر عدّة
  * جلسات متداخلة كما في السور).
  *
- * أرضية المتن (S16، student_poem_baselines) تُطبَّق كحدّ أدنى للتغطية —
- * max(المسجَّل, الأرضية) — لا تُلفَّق كسجلّات ولا تُبطل ما سُجِّل فعليًا فوقها.
+ * (S24 — بطلب صريح من يحيى): كانت "أرضية المتن" اليدوية (S16، student_poem_
+ * baselines) تُطبَّق هنا كحدّ أدنى للتغطية. أُلغيت نهائيًا لنفس السبب الذي
+ * أُلغيت به أرضية حفظ القرآن اليدوية سابقًا — التغطية تُحتسَب الآن حصرًا من
+ * مديات from_bayt..to_bayt الفعلية المسجَّلة، بلا أي إدخال يدوي لـ"ما قبل
+ * الانضمام".
  */
 class PoemProgress
 {
@@ -39,15 +42,6 @@ class PoemProgress
 
         $covered = min($this->mergedLength($this->rangesFromLogs($logs)), $poem->bayt_count);
 
-        $baseline = StudentPoemBaseline::query()
-            ->where('student_id', (int) $student->student_id)
-            ->where('poem_id', $poem->id)
-            ->value('baseline_bayt');
-
-        if ($baseline !== null) {
-            $covered = max($covered, min((int) $baseline, $poem->bayt_count));
-        }
-
         return $this->coverageCache[$key] = $covered;
     }
 
@@ -63,6 +57,46 @@ class PoemProgress
     public function forget(Student $student, Poem $poem): void
     {
         unset($this->coverageCache[$this->cacheKey($student, $poem)]);
+    }
+
+    /**
+     * منحنى حفظ متن تاريخي (S16) — نظير MemorizationProgress::timeline() على
+     * وحدة "بيت" لمتن واحد: نسبة تراكمية عند كل تاريخ سُجِّل فيه حفظ جديد لهذا
+     * المتن تحديدًا. (S24) لم تعد الأرضية اليدوية تُطبَّق هنا — راجع تعليق
+     * الصنف أعلاه.
+     *
+     * @return Collection<int, array{date: string, percent: float}>
+     */
+    public function timeline(Student $student, Poem $poem): Collection
+    {
+        $logs = $student->poemRecitationLogs()
+            ->reorder('logged_at')
+            ->orderBy('id')
+            ->where('poem_id', $poem->id)
+            ->where('type', 'حفظ')
+            ->get(['from_bayt', 'to_bayt', 'logged_at']);
+
+        $ranges = [];
+        $points = [];
+
+        foreach ($logs as $log) {
+            $from = max(1, (int) ($log->from_bayt ?: 1));
+            $to = (int) $log->to_bayt;
+
+            if ($to >= $from) {
+                $ranges[] = [$from, $to];
+            }
+
+            $covered = min($this->mergedLength($ranges), $poem->bayt_count);
+            $percent = $poem->bayt_count < 1 ? 0.0 : round(min($covered / $poem->bayt_count * 100, 100), 1);
+
+            // يوم واحد قد يحمل عدّة أسطر — تُبقى آخر نسبة في اليوم لا كل سطر.
+            $points[optional($log->logged_at)->toDateString()] = $percent;
+        }
+
+        return collect($points)
+            ->map(fn (float $percent, string $date) => ['date' => $date, 'percent' => $percent])
+            ->values();
     }
 
     private function cacheKey(Student $student, Poem $poem): string

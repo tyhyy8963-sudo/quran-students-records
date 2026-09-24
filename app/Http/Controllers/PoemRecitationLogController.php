@@ -28,7 +28,7 @@ class PoemRecitationLogController extends Controller
             'from_bayt' => $validated['from_bayt'] ?? null,
             'to_bayt'   => $validated['to_bayt'],
             'type'      => $validated['type'],
-            'grade'     => $validated['grade'] ?? null,
+            'status'    => $validated['status'] ?? null,
             'notes'     => $validated['notes'] ?? null,
             'logged_at' => $validated['logged_at'] ?? now()->toDateString(),
         ]);

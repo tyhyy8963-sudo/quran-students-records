@@ -8,8 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * المرجع القرآني (S6) — 114 سورة ثابتة، لا تُنشأ ولا تُحذف من التطبيق.
  *
- * منذ S14 يحمل الجدول أيضًا سلّم قياس التقدّم: رتبة السورة في ترتيب الحفظ
- * المعكوس (الناس = 1 … البقرة = 113)، واستثناء الفاتحة من العدّ.
+ * منذ S14 يحمل الجدول أيضًا سلّم ترتيب الحفظ المعكوس: رتبة السورة في هذا
+ * الترتيب (الناس = 1 … البقرة = 113)، واستثناء الفاتحة كليًا. هذا الترتيب
+ * يبقى أساس تحديد "أبعد سورة" في MemorizationProgress، لكن نسبة الحفظ نفسها
+ * لم تعد تُحسَب من رتبة السورة مباشرة منذ التصحيح الثاني (موزونة بالأرباع
+ * الـ240 بدل عدد السور، راجع MemorizationProgress) — فلا توجد هنا دالة
+ * "نسبة السورة نفسها على السلّم" بعد الآن، لأن أي رقم كذلك سيكذب بمجرّد
+ * وجوده (لا يطابق النسبة الفعلية المعروضة للطالب).
  */
 class Surah extends Model
 {
@@ -18,8 +23,9 @@ class Surah extends Model
     /**
      * عدد السور الداخلة في نسبة الحفظ: 114 ناقص الفاتحة.
      *
-     * ثابت مشتقّ من القاعدة لا رقم مكتوب بالصدفة — يُستعمل مقامًا للنسبة في
-     * MemorizationProgress، ويُتحقَّق منه في الاختبارات مقابل الجدول نفسه.
+     * ثابت مشتقّ من القاعدة لا رقم مكتوب بالصدفة — يُستعمل مقامًا لعدّاد
+     * "السور المكتملة" في MemorizationProgress (معلومة عرضية منفصلة عن نسبة
+     * الحفظ نفسها)، ويُتحقَّق منه في الاختبارات مقابل الجدول نفسه.
      */
     public const COUNTABLE_COUNT = 113;
 
@@ -49,20 +55,5 @@ class Surah extends Model
     public function scopeInMemorizationOrder(Builder $query): Builder
     {
         return $query->orderByRaw('memorization_order IS NULL')->orderBy('memorization_order');
-    }
-
-    /**
-     * موضع السورة على سلّم النسبة: الناس ≈ 1% والبقرة = 100%.
-     *
-     * هذه نسبة السورة نفسها (أين تقع في الطريق)، لا نسبة الطالب — نسبة الطالب
-     * تُحسب في MemorizationProgress من مجموع ما أتمّه فعلًا.
-     */
-    public function progressPercent(): float
-    {
-        if ($this->excluded_from_progress || $this->memorization_order === null) {
-            return 0.0;
-        }
-
-        return round($this->memorization_order / self::COUNTABLE_COUNT * 100, 1);
     }
 }

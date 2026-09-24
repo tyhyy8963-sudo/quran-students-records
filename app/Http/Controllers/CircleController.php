@@ -6,10 +6,21 @@ use App\Http\Requests\StoreCircleRequest;
 use App\Models\Circle;
 
 /**
- * إدارة الحلقات (S6) — قائمة بسيطة داخل لوحة الطلاب، لا شاشة مستقلة.
+ * إدارة الحلقات (S6) — كانت قائمة بسيطة داخل نافذة منبثقة في لوحة القرآن؛
+ * صارت صفحة مستقلّة بتبويبها الخاصّ "الحلقات" (طلب صريح من يحيى
+ * 2026-09-23: "ضيف تبويب الحلقات ... وأحذفه من صفحة القرآن"). index() هنا
+ * جديد بالكامل — store()/destroy() لم يتغيّرا (الواجهة الجديدة تستدعيهما
+ * بنفس الطريقة تمامًا التي كانت النافذة المنبثقة تستدعيهما بها).
  */
 class CircleController extends Controller
 {
+    public function index()
+    {
+        $circles = Circle::orderBy('name')->get();
+
+        return view('circles.index', ['circles' => $circles]);
+    }
+
     public function store(StoreCircleRequest $request)
     {
         $circle = Circle::create(['name' => $request->validated()['name']]);

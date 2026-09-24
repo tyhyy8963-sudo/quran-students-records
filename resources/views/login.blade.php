@@ -1,9 +1,11 @@
 @extends('layouts.guest')
 
-@section('title', 'تسجيل الدخول - كشف المتابعة')
+@section('title', 'تسجيل الدخول - رِواق')
 
 @section('content')
     <div class="card card-pad auth-card">
+        <img src="{{ asset('images/logo-full-light.png') }}" alt="رِواق" class="auth-logo is-light">
+        <img src="{{ asset('images/logo-full-dark.png') }}" alt="رِواق" class="auth-logo is-dark">
         <h1>تسجيل الدخول</h1>
         <p class="subtitle">ادخل باسم المستخدم وكلمة المرور اللذين سلّمهما لك مدير النظام.</p>
 

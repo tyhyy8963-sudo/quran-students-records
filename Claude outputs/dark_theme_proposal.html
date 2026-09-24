@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>مقترحات الوضع الليلي</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+    background: #0e0e0d;
+    color: #eee;
+    margin: 0;
+    padding: 24px;
+  }
+  h1 { text-align: center; font-size: 1.4rem; margin-bottom: 4px; }
+  p.sub { text-align: center; color: #999; margin-top: 0; margin-bottom: 28px; font-size: 0.95rem; }
+  .themes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) { .themes { grid-template-columns: 1fr; } }
+  .theme-card {
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid #333;
+  }
+  .theme-title { font-size: 1.15rem; font-weight: 800; margin: 0 0 4px; }
+  .theme-desc { font-size: 0.85rem; opacity: 0.75; margin: 0 0 18px; line-height: 1.6; }
+
+  .nav-mock { display:flex; gap:8px; padding:10px 14px; border-radius:10px; margin-bottom:16px; font-size:0.85rem; font-weight:700; }
+  .nav-mock span { padding: 4px 10px; border-radius: 8px; }
+
+  .card-mock { border-radius: 12px; padding: 16px; margin-bottom: 14px; border: 1px solid; }
+  .card-mock h3 { margin: 0 0 10px; font-size: 0.95rem; }
+
+  .input-mock { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid; font-size: 0.85rem; margin-bottom: 8px; }
+  .input-mock.focused { outline: none; }
+
+  .row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 10px; align-items:center; }
+  .chip-mock {
+    display:inline-flex; align-items:center; gap:6px; padding: 8px 16px; border-radius: 8px;
+    font-weight:700; font-size:0.82rem; border:1px solid transparent;
+  }
+  .dot { width:7px; height:7px; border-radius:50%; background: currentColor; opacity:0.8; }
+  .label { font-size: 0.72rem; opacity: 0.6; margin-bottom: 4px; display:block; }
+
+  .btn-mock { padding: 9px 18px; border-radius: 8px; font-weight:700; font-size:0.82rem; border: 1px solid transparent; cursor:pointer; }
+
+  .toast-mock { padding: 10px 14px; border-radius: 8px; font-weight:700; font-size:0.82rem; color:#fff; display:inline-block; }
+
+  .swatch-row { display:flex; gap:6px; margin-top: 6px; }
+  .swatch { width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); }
+
+  .note { max-width: 1200px; margin: 26px auto 0; font-size: 0.85rem; line-height: 1.9; color: #bbb; background:#1c1c1c; border-radius:12px; padding:16px 20px; }
+  .note b { color: #f0f0f0; }
+  .badge-ok { color: #6fd39a; font-weight:800; }
+  .badge-warn { color: #e8b85a; font-weight:800; }
+</style>
+</head>
+<body>
+
+<h1>مقترحان لألوان الوضع الليلي الجديدة</h1>
+<p class="sub">كل بطاقة تطبّق نفس عناصر الواجهة الحقيقية (الخلفية، البطاقات، الحقول، الأزرار، شارات الحضور، التنبيه) — قارن الجوّ العام واختر</p>
+
+<div class="themes">
+
+  <!-- ============ THEME A ============ -->
+  <div class="theme-card" style="background:#1a1a17; border-color:#3b3928;">
+    <div class="theme-title" style="color:#e9e4d6;">الخيار أ — الرمادي الزيتوني الدافئ</div>
+    <p class="theme-desc" style="color:#a89f87;">تطوير هادئ لهوية البرنامج الحالية (نفس الأخضر الزيتوني)، لكن بخلفية محايدة أقل تشبّعًا من الحالية بكثير — لا توهج، لا "قذارة لونية"، فقط رمادي دافئ هادئ.</p>
+
+    <div class="nav-mock" style="background:#242319; color:#e9e4d6;">
+      <span style="background:#8aa25a; color:#1a1a17;">قرآن</span>
+      <span>المتون</span><span>الحلقات</span><span>التقارير</span>
+    </div>
+
+    <div class="card-mock" style="background:#242319; border-color:#3b3928;">
+      <h3 style="color:#e9e4d6;">بحث</h3>
+      <label class="label" style="color:#a89f87;">حقل إدخال (بحالة التركيز)</label>
+      <input class="input-mock focused" style="background:#1a1a17; border-color:#8aa25a; color:#e9e4d6; box-shadow: 0 0 0 4px rgba(138,162,90,0.35);" value="ابحث باسم الطالب">
+
+      <label class="label" style="color:#a89f87;">الأزرار</label>
+      <div class="row">
+        <button class="btn-mock" style="background:#8aa25a; color:#1a1a17;">تسجيل سريع</button>
+        <button class="btn-mock" style="background:#34321f; color:#e9e4d6; border-color:#4a4732;">السجلّ</button>
+      </div>
+
+      <label class="label" style="color:#a89f87;">شارات الحضور — المجموعة المُتحقَّق منها بالكامل (موصى بها)</label>
+      <div class="row">
+        <span class="chip-mock" style="background:#22b8b0; color:#10221f;"><span class="dot"></span>حاضر</span>
+        <span class="chip-mock" style="background:#7c93ff; color:#12163a;"><span class="dot"></span>مستأذن</span>
+        <span class="chip-mock" style="background:#7d8289; color:#1c1e20;"><span class="dot"></span>غائب بدون عذر</span>
+        <span class="chip-mock" style="background:#ff6a52; color:#3a140c;">لم يحفظ</span>
+      </div>
+
+      <label class="label" style="color:#a89f87;">شارات الحضور — المجموعة التقليدية (أخضر/أزرق حقيقيان)</label>
+      <div class="row">
+        <span class="chip-mock" style="background:#2fbb7e; color:#0e2318;"><span class="dot"></span>حاضر</span>
+        <span class="chip-mock" style="background:#589eff; color:#0c2040;"><span class="dot"></span>مستأذن</span>
+        <span class="chip-mock" style="background:#767b83; color:#1a1c1e;"><span class="dot"></span>غائب بدون عذر</span>
+        <span class="chip-mock" style="background:#ff6a52; color:#3a140c;">لم يحفظ</span>
+      </div>
+
+      <label class="label" style="color:#a89f87;">تنبيه منبثق</label>
+      <div class="row">
+        <span class="toast-mock" style="background:#2f6b46;">تم تسجيل الحضور بنجاح</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THEME B ============ -->
+  <div class="theme-card" style="background:#16181a; border-color:#34383d;">
+    <div class="theme-title" style="color:#e6e8ea;">الخيار ب — الرمادي الحيادي البارد</div>
+    <p class="theme-desc" style="color:#9aa0a6;">اتجاه مختلف كليًا عن هوية البرنامج الدافئة — رمادي أزرق حيادي هادئ جدًا للعين (نمط شائع في تطبيقات الليل المريحة)، مع إبقاء الأخضر الأساسي كما هو للأزرار الرئيسية فقط.</p>
+
+    <div class="nav-mock" style="background:#1e2124; color:#e6e8ea;">
+      <span style="background:#7fa860; color:#12140f;">قرآن</span>
+      <span>المتون</span><span>الحلقات</span><span>التقارير</span>
+    </div>
+
+    <div class="card-mock" style="background:#1e2124; border-color:#34383d;">
+      <h3 style="color:#e6e8ea;">بحث</h3>
+      <label class="label" style="color:#9aa0a6;">حقل إدخال (بحالة التركيز)</label>
+      <input class="input-mock focused" style="background:#16181a; border-color:#7fa860; color:#e6e8ea; box-shadow: 0 0 0 4px rgba(127,168,96,0.35);" value="ابحث باسم الطالب">
+
+      <label class="label" style="color:#9aa0a6;">الأزرار</label>
+      <div class="row">
+        <button class="btn-mock" style="background:#7fa860; color:#12140f;">تسجيل سريع</button>
+        <button class="btn-mock" style="background:#262a2e; color:#e6e8ea; border-color:#454a50;">السجلّ</button>
+      </div>
+
+      <label class="label" style="color:#9aa0a6;">شارات الحضور — المجموعة المُتحقَّق منها بالكامل (موصى بها)</label>
+      <div class="row">
+        <span class="chip-mock" style="background:#22b8b0; color:#10221f;"><span class="dot"></span>حاضر</span>
+        <span class="chip-mock" style="background:#7c93ff; color:#12163a;"><span class="dot"></span>مستأذن</span>
+        <span class="chip-mock" style="background:#7d8289; color:#1c1e20;"><span class="dot"></span>غائب بدون عذر</span>
+        <span class="chip-mock" style="background:#ff6a52; color:#3a140c;">لم يحفظ</span>
+      </div>
+
+      <label class="label" style="color:#9aa0a6;">شارات الحضور — المجموعة التقليدية (أخضر/أزرق حقيقيان)</label>
+      <div class="row">
+        <span class="chip-mock" style="background:#2fbb7e; color:#0e2318;"><span class="dot"></span>حاضر</span>
+        <span class="chip-mock" style="background:#589eff; color:#0c2040;"><span class="dot"></span>مستأذن</span>
+        <span class="chip-mock" style="background:#767b83; color:#1a1c1e;"><span class="dot"></span>غائب بدون عذر</span>
+        <span class="chip-mock" style="background:#ff6a52; color:#3a140c;">لم يحفظ</span>
+      </div>
+
+      <label class="label" style="color:#9aa0a6;">تنبيه منبثق</label>
+      <div class="row">
+        <span class="toast-mock" style="background:#2a5f42;">تم تسجيل الحضور بنجاح</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>كيف اختبرنا الألوان فعليًا (لا تخمينًا):</b> شغّلنا أداة تحقّق حقيقية من فروقات الألوان (OKLab ΔE) لعمى الألوان الأحمر-الأخضر والأزرق-الأصفر على كل مجموعة شارات مقترحة.<br><br>
+  • <span class="badge-ok">المجموعة المُتحقَّق منها بالكامل</span> (فيروزي/بنفسجي فاتح/رمادي/برتقالي مرجاني): اجتازت فحص التمييز الكامل لكل أنواع عمى الألوان (ΔE ≥ 8) وفحص التمييز للرؤية الطبيعية (ΔE ≥ 15) معًا — أأمن خيار موضوعيًا.<br>
+  • <span class="badge-warn">المجموعة التقليدية</span> (أخضر/أزرق حقيقيان تشبهان الألوان الحالية): اجتازت فحص الرؤية الطبيعية بارتياح، لكنها في حدود القبول الأدنى لعمى الألوان تحديدًا بين الأخضر والأحمر (ضمن نطاق مقبول <b>بشرط</b> وجود نص/تسمية دائمًا مع كل شارة — وهذا متحقّق فعلًا في تصميمنا).<br>
+  • <b>سبب فشل التصحيح السابق (S33):</b> نفس الفحص طُبِّق على الألوان التي شحنتها سابقًا لتوضيح النصوص في الليل (أخضر/أزرق/أحمر باهتان جدًا) — النتيجة فشل واضح (فرق ٤.١ فقط بين الأخضر والأحمر لعمى الألوان، والمطلوب ٨ فأكثر) لأنها كانت شارات داكنة اللون خافتة التشبّع، وهذا يضيّق مساحة التمييز بين الألوان رياضيًا. الحل الذي اجتاز الفحص هنا هو العكس تمامًا: شارة أفتح قليلًا ومتوسطة التشبّع (لا داكنة خافتة، ولا فاتحة فاقعة) مع نص داكن فوقها — نفس مبدأ الشارات النهارية الحالية لكن معايرة لطيف الليل.
+</div>
+
+</body>
+</html>

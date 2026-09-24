@@ -232,6 +232,13 @@ function applyTheme(theme) {
     try { localStorage.setItem('keshf-theme', theme); } catch (e) { /* تخزين محلي غير متاح — لا يمنع تبديل الوضع لهذه الجلسة */ }
     const btn = document.getElementById('themeToggle');
     if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+
+    // حدث مخصَّص (S19.5) — منحنيات Chart.js في student-timeline.js تُلوَّن من
+    // نفس توكِنات CSS، لكنها لا تعيد قراءتها تلقائيًا عند تبديل الوضع الليلي
+    // (Chart.js يرسم على Canvas لا يتأثّر بتغيّر متغيّرات CSS وحده). هذا الحدث
+    // يتيح لأي منحنى في الصفحة إعادة رسم نفسه بالألوان الجديدة فورًا بدل
+    // انتظار إعادة تحميل الصفحة لمطابقة الوضع الليلي/النهاري.
+    window.dispatchEvent(new CustomEvent('keshf:theme-change', { detail: { theme } }));
 }
 
 document.addEventListener('DOMContentLoaded', () => {

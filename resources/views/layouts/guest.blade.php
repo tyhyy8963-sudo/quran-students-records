@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#606c38">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
-    <title>@yield('title', 'كشف المتابعة')</title>
+    <title>@yield('title', 'رِواق')</title>
     <script>
         (function () {
             try {

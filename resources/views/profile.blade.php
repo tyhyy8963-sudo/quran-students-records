@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'الملف الشخصي - كشف المتابعة')
+@section('title', 'الملف الشخصي - رِواق')
 
 @section('content')
     <div class="card card-pad auth-card" style="margin-inline: auto;">
         <div class="cluster" style="justify-content: space-between;">
             <h1 class="mt-0">الملف الشخصي</h1>
-            <a href="{{ $user->isAdmin() ? route('admin.teachers.index') : route('dashboard') }}" class="btn btn-ghost btn-icon" aria-label="رجوع">✕</a>
+            <a href="{{ $user->isAdmin() ? route('admin.teachers.index') : route('dashboard') }}" class="btn btn-ghost btn-icon" aria-label="رجوع"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></a>
         </div>
 
         <div class="profile-row">

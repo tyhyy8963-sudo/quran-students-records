@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
- * الحضور (S9) — الشاشة السريعة (حفظ دفعة)، منع التسجيل المستقبلي، الملكية،
- * ومؤشّر الانقطاع البسيط على اللوحة.
+ * الحضور (S9) — الشاشة السريعة (حفظ دفعة)، منع التسجيل المستقبلي، الملكية.
+ * مؤشّر الانقطاع البسيط (S9) كان يظهر على لوحة "قرآن" أيضًا — حُذف من هناك في
+ * S24 (طلب صريح من يحيى)، لا يزال يغذّي قائمة الانتباه في لوحة التقارير فقط.
  */
 class AttendanceTest extends TestCase
 {
@@ -73,7 +74,7 @@ class AttendanceTest extends TestCase
 
         $this->actingAs($this->teacher)->postJson('/attendance', [
             'date' => $date,
-            'entries' => [['student_id' => $this->student->student_id, 'status' => 'غائب']],
+            'entries' => [['student_id' => $this->student->student_id, 'status' => 'غائب بدون عذر']],
         ])->assertOk();
 
         $this->assertEquals(
@@ -82,7 +83,7 @@ class AttendanceTest extends TestCase
         );
         $this->assertTrue(
             Attendance::where('student_id', $this->student->student_id)
-                ->where('status', 'غائب')
+                ->where('status', 'غائب بدون عذر')
                 ->whereDate('date', $date)
                 ->exists()
         );
@@ -129,23 +130,21 @@ class AttendanceTest extends TestCase
             ->assertJsonValidationErrors(['entries.0.student_id']);
     }
 
-    /** @test */
-    public function two_consecutive_absences_trigger_the_dashboard_alert(): void
+    /**
+     * (S24، الجزء الثالث — طلب صريح من يحيى بعد رؤية لوحة "قرآن" فعليًا):
+     * شارة "انقطاع" (غياب جلستَين متتاليتَين) كانت تظهر تحت اسم الطالب في
+     * `/dashboard` — يحيى: "حالة الطالب... المفترض هنا مش مكانها". حُذفت
+     * نهائيًا من هذه اللوحة. `Attendance::alertsFor()` نفسها لم تُمَسّ — لا
+     * تزال تغذّي "قائمة الانتباه" في لوحة التقارير (`ReportController::
+     * index()`)، فهذا الاختبار يتحقّق فقط من غيابها عن `/dashboard` تحديدًا،
+     * لا من إلغاء الميزة كليًا من النظام.
+     *
+     * @test
+     */
+    public function two_consecutive_absences_no_longer_show_an_alert_badge_on_the_dashboard(): void
     {
         $this->student->attendances()->create(['date' => now()->subDays(2), 'status' => 'غائب']);
         $this->student->attendances()->create(['date' => now()->subDay(), 'status' => 'غائب']);
-
-        $this->actingAs($this->teacher)
-            ->get('/dashboard')
-            ->assertOk()
-            ->assertSee('انقطاع');
-    }
-
-    /** @test */
-    public function a_present_day_after_an_absence_clears_the_alert(): void
-    {
-        $this->student->attendances()->create(['date' => now()->subDays(2), 'status' => 'غائب']);
-        $this->student->attendances()->create(['date' => now()->subDay(), 'status' => 'حاضر']);
 
         $this->actingAs($this->teacher)
             ->get('/dashboard')
@@ -168,17 +167,24 @@ class AttendanceTest extends TestCase
     /**
      * انحدار: كاست "date" يخزّن وقتًا كاملاً خلف التاريخ على SQLite، وكانت
      * الشاشة السريعة تقارن نص التاريخ الخام (where بدل whereDate) فتفشل
-     * مطابقة سطر اليوم نفسه دائمًا — الأزرار تظهر فارغة رغم وجود تسجيل فعلي.
+     * مطابقة سطر اليوم نفسه دائمًا — الحالة تظهر فارغة رغم وجود تسجيل فعلي.
+     *
+     * (تصحيح S23): /attendance عادت لعرض فقط — لا أزرار قابلة للنقر بعد
+     * الآن، فالتحقّق هنا صار من ظهور حالة اليوم المسجَّلة كنصّ/شارة بدل زرّ
+     * محدَّد سلفًا، لكنه نفس جوهر الانحدار المقصود: عطل كاست "date" يظهر
+     * بنفس الطريقة في whereDate('date', $date) داخل AttendanceController::index().
      */
     /** @test */
-    public function the_quick_checkin_screen_shows_the_already_recorded_status_for_today(): void
+    public function the_read_only_attendance_screen_shows_the_already_recorded_status_for_today(): void
     {
-        $this->student->attendances()->create(['date' => now(), 'status' => 'متأخر']);
+        // (S22) كانت "متأخر" قبل إلغائها من Attendance::STATUSES — أي حالة
+        // غير "حاضر" ما زالت تثبت نفس السلوك المقصود هنا.
+        $this->student->attendances()->create(['date' => now(), 'status' => 'مستأذن']);
 
         $this->actingAs($this->teacher)
             ->get('/attendance')
             ->assertOk()
-            ->assertSee('status-btn selected', false);
+            ->assertSee('data-status="مستأذن"', false);
     }
 
     /**

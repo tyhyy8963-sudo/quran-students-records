@@ -36,7 +36,81 @@
     --color-warning-50:  #fbf3df;
     --color-warning-500: #b8860b;
 
+    /* info-50 (S21): كانت غائبة أصلًا فاضطُرّ كل استخدام لـ"مستأذن" (شارة/زر/يوم
+       تقويم) إلى تثبيت #eaf1f8 حرفيًا بدل متغيّر — يعمل بصريًا في الوضع النهاري
+       فقط لأنه يصادف نفس القيمة، لكنه لا يتغيّر في الوضع الليلي مطلقًا، بينما
+       النص المقترن به (--color-info-500) يتغيّر فعليًا، فتنقلب النسبة إلى نص
+       أزرق فاتح على خلفية زرقاء فاتحة بالليل (تباين ~2.25:1 فقط، دون حد WCAG
+       AA البالغ 4.5:1). الإصلاح: متغيّر حقيقي بنسخة نهارية مطابقة للقيمة القديمة
+       حرفيًا (فلا تغيير مرئي بالنهار) ونسخة ليلية داكنة تطابق عمق بقية عائلة
+       الحالة (٥٠) الأخرى (نجاح/خطر/تحذير). */
+    --color-info-50: #eaf1f8;
     --color-info-500: #2f6690;
+
+    /* warning-700 (v2): درجة أغمق ثابتة عبر الوضعين — كانت مثبَّتة حرفيًا داخل
+       .toast-item.toast-warning فقط (#8a6a12) بلا اسم متغيّر، فتم ترقيتها هنا
+       بنفس القيمة تمامًا (لا تغيير مرئي) لتصبح قابلة لإعادة الاستخدام. */
+    --color-warning-700: #8a6a12;
+
+    /* رموز الحالة (status) للشارات والحضور — مُرقّاة من قيم حرفية كانت مكرّرة
+       داخل .chip-simple--danger و.chip-attendance[data-status] و.chip-action
+       بلا اسم متغيّر (لا تغيير مرئي بالنهار).
+       (تصحيح S33 — بلاغ يحيى: "ألوان الوضع الليلي مرررررررة مزعجة وغير
+       مريحة للعين... لا من خلفية ولا أزرار"): تعليق سابق هنا كان يصف status-*
+       (عدا status-absent) بأنها "ثابتة عبر الوضعين — قرار متحقَّق منه". لكن
+       التحقّق البصري الفعلي لهذا التصحيح (لقطة حقيقية لنفس البيانات في
+       الوضع الليلي) أظهر أن هذا "الثبات" هو بالضبط سبب الإزعاج: ألوان
+       الباستيل الفاتحة هذه (المصمَّمة لتتباين مع خلفية بيضاء) تتحوّل إلى وهج
+       نيون صارخ فوق الخلفية الداكنة الجديدة. أُضيفت نصوص حالة مستقلة هنا
+       (present/excused/danger) بنفس قيمة #2c2c2c المستعملة سابقًا كحرفية
+       مباشرة في CSS (لا تغيير مرئي بالنهار)، لتصبح قابلة للانعكاس في الوضع
+       الليلي أدناه دون المساس بالنهار. */
+    --status-present-bg: #c5dfb4;
+    --status-present-text: #2c2c2c;
+    --status-excused-bg: #bcd9ec;
+    --status-excused-text: #2c2c2c;
+    --status-absent-bg: #e6e6e5;
+    --status-absent-text: #4a4d50;
+    --status-danger-chip-bg: #ff8087;
+    --status-danger-chip-text: #2c2c2c;
+    --status-neutral-chip-bg: #cfcabe;
+
+    /* خلفيات التنبيه المنبثق (toast) — رموز مستقلّة عمدًا عن accent-600/
+       success-600/danger-600 (تصحيح S33). تلك الرموز تُستعمل أصلًا كـ"لون
+       نص" في أماكن أخرى فتنعكس فاتح↔داكن مع تبديل الوضع، لكن التنبيه يحتاج
+       دومًا خلفية داكنة مشبَّعة + نص أبيض ثابت (#fff) بصرف النظر عن الوضع —
+       إعادة استخدام رمز ينعكس كخلفية هنا كانت تُنتج نصًّا أبيض فوق خلفية
+       فاتحة تقريبًا في الليل (شبه غير مقروء). القيم مطابقة تمامًا لقيم
+       accent-600/success-600/danger-600/warning-700 النهارية الحالية (لا
+       تغيير مرئي بالنهار)، وتبقى بلا إعادة تعريف في :root[data-theme="dark"]
+       عمدًا حتى لا تنعكس. */
+    --toast-bg-default: #3a2d21;
+    --toast-bg-success: #245229;
+    --toast-bg-error: #a12d21;
+    --toast-bg-warning: #8a6a12;
+
+    /* حلقة تركيز الإدخال ولون النائب (placeholder) — كانا حرفيّين مباشرين
+       داخل .input:focus/.input::placeholder (تصحيح S33). القيمتان هنا
+       مطابقتان لما كان مكتوبًا (لا تغيير مرئي بالنهار)، وتُعاد تعريفهما في
+       الوضع الليلي أدناه بقيم فعليًا مرئية على خلفية داكنة بدل أن ترثا قيمًا
+       مصمَّمة أصلًا لخلفية بيضاء. */
+    --color-focus-ring: #e3e9cd;
+    --color-placeholder: #a89d87;
+
+    /* ألوان الرسوم البيانية (توثيقية فقط) — chartPalette() في
+       student-timeline.js تقرأ الألوان فعليًا من --color-primary-500/
+       --color-info-500/--color-accent-500 مباشرة (تحقّقنا أن هذا الاستخدام
+       يعرض كل لون في بطاقة/canvas منفصلة، وليس كسلسلة تصنيفية جنبًا لجنب،
+       فلا حاجة لتغييره). هذه المتغيّرات مضافة فقط للتوثيق ولاستخدام مستقبلي
+       محتمل، ولا يقرأها أي كود JS حاليًا. */
+    --chart-memorization: #2a78d6;
+    --chart-review: #1baf7a;
+    --chart-poem: #eb6834;
+
+    /* غطاء الطبقات (نافذة/قائمة) — كان .modal-backdrop مثبَّتًا بلون كحلي
+       منفصل عن هوية التطبيق (rgba(15,23,42,...)) بلا اسم متغيّر؛ الآن غطاء
+       دافئ متّسق مع --color-text. */
+    --overlay-scrim: rgba(54, 43, 31, 0.5);
 
     --color-bg:          #fbf9f3;
     --color-surface:     #ffffff;
@@ -63,14 +137,20 @@
     --space-8: 4rem;
 
     /* الزوايا والظلال */
+    --radius-xs: 4px;
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 22px;
     --radius-full: 999px;
 
+    --shadow-xs: 0 1px 1px rgba(54, 43, 31, 0.05);
     --shadow-sm: 0 1px 2px rgba(54, 43, 31, 0.06), 0 1px 1px rgba(54, 43, 31, 0.04);
     --shadow-md: 0 8px 24px rgba(54, 43, 31, 0.08), 0 2px 6px rgba(54, 43, 31, 0.06);
     --shadow-lg: 0 20px 45px rgba(54, 43, 31, 0.14), 0 6px 16px rgba(54, 43, 31, 0.08);
+    /* shadow-xl (v2): كانت .modal تستخدم box-shadow مثبّتًا حرفيًا منفصلًا عن
+       مقياس الظلال (0 20px 50px rgba(15,23,42,0.25)) — الآن ظلّ أعمق من
+       --shadow-lg متّسق مع لون الحبر الدافئ لبقية المقياس. */
+    --shadow-xl: 0 24px 60px rgba(54, 43, 31, 0.22), 0 8px 20px rgba(54, 43, 31, 0.10);
 
     --transition-fast: 140ms ease;
     --transition-base: 220ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -82,6 +162,16 @@
  * 2) القاعدة (Reset)
  * ----------------------------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
+
+/* عطل حقيقي مؤكَّد (بلاغ يحيى — راجع تعليق نافذة تسجيل الدرس/المراجعة، قسم
+   23، للتفصيل الكامل): أيّ عنصر يحمل سمة HTML‏ hidden مع صنف CSS يضبط
+   display بلا شرط (`.modal-backdrop{display:flex}`، `.field{display:flex}`
+   ...) يظهر دومًا متجاهلًا hidden تمامًا — لأن قاعدة المؤلّف (Author) تتفوّق
+   في الـcascade على ورقة أنماط المتصفح الافتراضية (User-Agent) التي تضبط
+   hidden كـdisplay:none، بصرف النظر عن التحديد (specificity). أُثبت هذا
+   فعليًا بمتصفح حقيقي قبل هذا الإصلاح. قاعدة أمان عامة واحدة هنا (بدل رقعة
+   لكل صنف على حدة) تضمن أن hidden يعمل دائمًا مهما أضفنا من أصناف مستقبلًا. */
+[hidden] { display: none !important; }
 
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 
@@ -253,6 +343,23 @@ img, svg { display: block; max-width: 100%; }
 }
 .btn-danger:hover:not(:disabled) { background: var(--color-danger-500); color: #fff; }
 
+/* أزرار ناعمة (v2) — بديل أقل حدّة من .btn-primary/.btn-danger الصلبين لمواضع
+   لا تحتاج أعلى وزن بصري ممكن (إجراء ثانوي مهم لكنه ليس الأساسي في الشاشة).
+   مضافة كأدوات متاحة في نظام التصميم؛ لا تستبدل أي استخدام حالي تلقائيًا. */
+.btn-primary-soft {
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    border-color: transparent;
+}
+.btn-primary-soft:hover:not(:disabled) { background: var(--color-primary-100); }
+
+.btn-danger-soft {
+    background: var(--color-danger-50);
+    color: var(--color-danger-600);
+    border-color: transparent;
+}
+.btn-danger-soft:hover:not(:disabled) { background: var(--status-danger-chip-bg); color: var(--status-danger-chip-text); }
+
 .btn-ghost {
     background: transparent;
     color: var(--color-text-muted);
@@ -313,11 +420,11 @@ img, svg { display: block; max-width: 100%; }
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.input::placeholder { color: #a89d87; }
+.input::placeholder { color: var(--color-placeholder); }
 
 .input:focus {
     border-color: var(--color-primary-500);
-    box-shadow: 0 0 0 4px var(--color-primary-100);
+    box-shadow: 0 0 0 4px var(--color-focus-ring);
     outline: none;
 }
 
@@ -370,7 +477,7 @@ img, svg { display: block; max-width: 100%; }
     display: flex;
     align-items: flex-start;
     gap: var(--space-3);
-    background: var(--color-accent-600);
+    background: var(--toast-bg-default);
     color: #fff;
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
@@ -381,9 +488,9 @@ img, svg { display: block; max-width: 100%; }
     animation: toastIn var(--transition-base) forwards;
 }
 
-.toast-item.toast-success { background: var(--color-success-600); }
-.toast-item.toast-error   { background: var(--color-danger-600); }
-.toast-item.toast-warning { background: #8a6a12; }
+.toast-item.toast-success { background: var(--toast-bg-success); }
+.toast-item.toast-error   { background: var(--toast-bg-error); }
+.toast-item.toast-warning { background: var(--toast-bg-warning); }
 
 .toast-item.toast-leaving { animation: toastOut var(--transition-base) forwards; }
 
@@ -451,7 +558,7 @@ img, svg { display: block; max-width: 100%; }
 
 .badge-active      { background: var(--color-success-50); color: var(--color-success-600); }
 .badge-inactive    { background: var(--color-warning-50); color: var(--color-warning-500); }
-.badge-transferred { background: #eaf1f8; color: var(--color-info-500); }
+.badge-transferred { background: var(--color-info-50); color: var(--color-info-500); }
 .badge-graduated   { background: var(--color-primary-100); color: var(--color-primary-700); }
 
 /* -------------------------------------------------------------------------
@@ -500,6 +607,20 @@ img, svg { display: block; max-width: 100%; }
     font-weight: 800;
 }
 
+/* شعار "رِواق" في رأس الصفحة — صورتان (فاتحة/داكنة) تتبادلان الظهور حسب
+   data-theme على <html> (نفس آلية بقية الموقع، لا استعلام وسائط)، إذ يبهت
+   اللون الذهبي على خلفية بيضاء بينما يبرز الأخضر الزيتوني على خلفية داكنة
+   والعكس صحيح — راجع رسالة يحيى 2026-09-24 لاختيار اللونين. */
+.brand-mark-img {
+    width: 2.25rem;
+    height: 2.25rem;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.brand-mark-img.is-dark { display: none; }
+:root[data-theme="dark"] .brand-mark-img.is-light { display: none; }
+:root[data-theme="dark"] .brand-mark-img.is-dark { display: block; }
+
 .teacher-summary {
     display: flex;
     align-items: center;
@@ -529,7 +650,14 @@ img, svg { display: block; max-width: 100%; }
     font-family: var(--font-display);
 }
 
-.app-nav { display: flex; gap: var(--space-1); }
+/* (تصحيح S32 — طلب يحيى "تكامل وتوافق وتوازن... في الجوالات بأنواعها"):
+   عطل حقيقي مكتشَف بالفحص المباشر — روابط التبويبات الستّة (قرآن/المتون/
+   الحلقات/الحضور/التقارير/السجلات) كانت بلا flex-wrap، فحين لا تتّسع كلّها
+   بعرض واحد (كل عرض هاتف تقريبًا) كانت تفرض عرضًا أدنى للصفحة كاملة أوسع من
+   الشاشة نفسها — أي أن الصفحة بأكملها (لا التبويبات فقط) تصير قابلة للتمرير
+   أفقيًا على أي هاتف، وهذا ظاهر حتى بلا أي تكبير أو تعديل آخر. الحل: تسمح
+   بانتقال التبويبات لسطر ثانٍ عند الحاجة بدل دفع عرض الصفحة بأكملها. */
+.app-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
 .app-nav a {
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-full);
@@ -556,71 +684,335 @@ img, svg { display: block; max-width: 100%; }
 
 .students-table { display: flex; flex-direction: column; gap: var(--space-3); }
 
-.student-row {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr 1.3fr 140px auto;
+/* تسميات أعمدة ثابتة فوق البطاقات (تصحيح بصري رابع، صورة مرجعية من يحيى) —
+   نصّ فقط، بلا روابط فرز (خلافًا لرأس الجدول القديم القابل للنقر الذي أُزيل
+   في التصحيح الثالث). بنفس توزيع flex الذي تستعمله .student-row، فتقترب
+   من الاصطفاف فوق كل بطاقة بقدر ما تسمح به بطاقات متفاوتة العرض — تمامًا
+   كما في الصورة المرجعية نفسها، التي لا تُظهر اصطفافًا حسابيًا دقيقًا هي
+   الأخرى. مخفية عن قارئ الشاشة (aria-hidden) لأن كل بطاقة تحمل نصًّا مقروءًا
+   كافيًا بمفرده (مثال: زرّ "لم يسمع بعد" مفهوم دون عنوان عمود "الدرس" فوقه). */
+.students-table-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
     gap: var(--space-3);
+    padding: 0 var(--space-3);
+    margin-bottom: var(--space-2);
+}
+.students-table-head span {
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* (تصحيح لاحق، طلب صريح من يحيى 2026-09-23: "عدم توازن الصفوف والعواميد
+   وتداخل نصوص جنب أو تحت بعضها ... سواء فيه بيانات مضافة أو ما فيه بيانات
+   مضافة") — على الشاشة الواسعة، صفّ بطاقات مرن (flex) بلا عرض أعمدة ثابت
+   يجعل موضع كل بطاقة يعتمد على عرض البطاقات التي قبلها في نفس الصفّ: صفّ
+   فيه بطاقة نطاق عريضة (مثال حقيقي وُلِّد به هذا التصحيح: "البقرة - 50 من
+   إلى البقرة - 286") يزيح كل ما بعدها يمينًا/يسارًا عن موضعه في الصفوف
+   الأخرى، فتبدو الأعمدة "قافزة" لا مصطفّة. الحل بعد تجربة فعلية بلقطات
+   شاشة قبل/بعد: شبكة أعمدة CSS بعرض ثابت لكل نوع صفحة (.quran-columns
+   للوحة "قرآن"، .poem-columns لصفحة "المتون") تُفعَّل فقط على الشاشة
+   الواسعة (min-width:861px) — أعمدة الشبكة ثابتة العرض فتصطفّ رأسيًا عبر
+   كل الصفوف، لكن كل بطاقة داخل عمودها لا تُمَدَّد لتملأه (justify-self:
+   start) فتبقى بعرضها الطبيعي المرن كما طلب يحيى سابقًا (لا "مربّعات").
+   الهاتف (تحت 861px) لم يُمَسّ: يبقى flex-wrap كما كان، كل بطاقة تحمل نصًّا
+   كافيًا بمفرده فلا حاجة لتسميات أعمدة هناك. */
+@media (min-width: 861px) {
+    .students-table-head.quran-columns,
+    .students-table-head.poem-columns,
+    .student-row.quran-columns,
+    .student-row.poem-columns {
+        display: grid;
+        /* (تصحيح S35 — بلاغ يحيى بصورة مخطَّطة ثانية على النتيجة المشحونة
+           فعلًا: "عنوان العامود غير متناسق مع البيانات التي تحته إن كثرت
+           بياناتها وحجم المستطيل المليء بالبيانات غير متناسق مع بقية
+           المستطيلات التي حوله"): S34 وحّدت عرض كل بطاقة داخل عمودها لكن
+           تركت align-items:center، فحين تكبر بطاقة واحدة في الصفّ ارتفاعًا
+           (كالمراجعة متعدّدة الأسطر مع تسمية الكمّية "(ربع جزء)") يكبر
+           ارتفاع الصفّ كلّه تبعًا لها، وتبقى بقيّة البطاقات (الدرس/الحضور/
+           الأزرار) بارتفاعها الطبيعي القصير عائمة في منتصف الصفّ الأطول —
+           فيبدو حجمها غير متناسق مع البطاقة الطويلة المجاورة، وتفقد حافّتها
+           العلوية اصطفافها مع عنوان عمودها (الذي يبقى في أعلى الصفّ بينما
+           البطاقة القصيرة تبدأ من منتصفه). الحل: align-items:stretch بدل
+           center — كل بطاقة تمتدّ الآن لتملأ ارتفاع صفّها بالكامل (كعرضها
+           تمامًا)، فتتساوى كل البطاقات في صفّ واحد ارتفاعًا وتبدأ جميعًا من
+           نفس الحافة العلوية مباشرة تحت عنوان عمودها، بصرف النظر عن طول
+           محتوى أيّ بطاقة أخرى في نفس الصفّ. */
+        align-items: stretch;
+    }
+    /* (تصحيح S34 — بلاغ يحيى بصورتين موضَّحتين بخطوط حمراء: "مشكلة الصفوف
+       والأعمدة الغير متوازنة"): قِسْنا الموضع الفعلي (getBoundingClientRect)
+       لكل بطاقة عبر كل الصفوف قبل أي تعديل — تبيّن أن حافة "البداية" (اليمين
+       في RTL) لكل عمود كانت فعليًا مصطفّة بكسل-بكسل بدقّة متناهية عبر كل
+       الصفوف (لا عطل تقني في الشبكة نفسها). المشكلة الحقيقية بصريّة بحتة:
+       justify-self:start (قرار التصحيح البصري الثالث/#45 لتفادي "مربّعات"
+       بعرض ثابت) يجعل كل بطاقة تأخذ عرض محتواها فقط، فتبقى حافتها الأخرى
+       (اليسار) "مسنّنة" تختلف من صفّ لآخر حسب طول المحتوى — بطاقة نطاق
+       عريضة فوق شارة "لم يحفظ" الصغيرة فوق بطاقة نطاق عريضة أخرى تحتها،
+       فيبدو العمود بأكمله متعرّجًا لا مستقيم الحواف رغم اصطفاف بدايته
+       تقنيًا. الحل الجذري المُتحقَّق منه بلقطات شاشة فعلية قبل/بعد: تمديد كل
+       بطاقة لتملأ عرض عمودها بالكامل (stretch) بدل الاكتفاء بعرض محتواها —
+       يعطي كل عمود حافّتين مستقيمتين تمامًا عبر كل الصفوف، وبما أن الأعمدة
+       عريضة أصلًا (لا مربّعة الشكل ولا قريبة من التربيع)، هذا لا يُعيد مشكلة
+       "المربّعات" التي رفضها يحيى في القرار الثالث — البطاقات تبقى مستطيلات
+       عريضة، فقط موحّدة العرض داخل عمودها. (S35): أُضيف align-self:stretch
+       صراحةً هنا أيضًا (لا الاعتماد على وراثة align-items وحدها) ليشمل
+       التوحيد كِلا البُعدين معًا. */
+    .student-row.quran-columns > *,
+    .student-row.poem-columns > * {
+        justify-self: stretch;
+        align-self: stretch;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .student-row.quran-columns .chip-range,
+    .student-row.poem-columns .chip-range {
+        justify-content: center;
+    }
+    .student-row.quran-columns .range-chip-parts,
+    .student-row.poem-columns .range-chip-parts {
+        flex: 1;
+        justify-content: center;
+    }
+    .student-row.quran-columns .range-chip-part,
+    .student-row.poem-columns .range-chip-part {
+        flex: 1;
+    }
+}
+.quran-columns {
+    grid-template-columns: minmax(9rem, 1.3fr) minmax(11rem, 1.6fr) minmax(11rem, 1.6fr) minmax(7rem, 0.9fr) minmax(7.5rem, 0.9fr) minmax(5rem, 0.7fr);
+    gap: var(--space-3);
+}
+.poem-columns {
+    /* ٦ أعمدة بعد إضافة عمود "الحالة" (زرّ الحضور، طلب #2 من يحيى
+       2026-09-23) بين "المتون والتقدّم" و"تسجيل" — نفس تناسب أعمدة
+       .quran-columns أعلاه لعمودَي الحالة والتسجيل. */
+    grid-template-columns: minmax(9rem, 1.3fr) minmax(6rem, 0.8fr) minmax(15rem, 2fr) minmax(7rem, 0.9fr) minmax(7.5rem, 0.9fr) minmax(5rem, 0.7fr);
+    gap: var(--space-3);
+}
+
+/* -------------------------------------------------------------------------
+ * صفّ الطالب — بطاقات (chips) لا شبكة أعمدة (تصحيح بصري ثالث، S23)
+ *
+ * بعد شكوى يحيى من "عفن بصري" في الصفّ (أزرار حضور أربعة متراصّة + شارة/زرّ
+ * "تسجيل" منفصلَين لكل من الدرس والمراجعة)، أرسل 4 صور مرجعية للشكل الذي
+ * يريده حرفيًا: صفّ من بطاقات صغيرة مستقلّة (اسم، درس، مراجعة، حضور اليوم،
+ * السجلّ)، كل بطاقة بعرض يتبع محتواها لا عمود شبكة ثابت العرض. الألوان
+ * (الأخضر/الأحمر/الأصفر/التان) أُخذت من الصور نفسها بعيّنات بكسل مباشرة —
+ * أصرح من عائلة "-50" الفاتحة جدًا المستعملة في شارات أخرى بالتطبيق، فعُرِّفت
+ * هنا محليًا (قيم حرفية) بدل تعديل رموز التصميم العامّة خشية التأثير على
+ * شاشات أخرى غير معنية بهذا التصحيح.
+ *
+ * عمود "الحلقة" ومحرِّر تعديل الاسم/الحلقة المضمَّن وزرّ "حذف" — كلّها كانت
+ * على هذا الصفّ مباشرة في التصميم السابق — لم تظهر في أيّ من الصور الأربع
+ * فأُزيلت من هنا تحديدًا (تعليق تفصيلي أعلى حلقة الصفّ في dashboard.blade.php،
+ * ونقطة مفتوحة مذكورة في وثيقة المشروع: لا واجهة حالية لتعديل اسم/حلقة طالب
+ * موجود أصلًا أو حذفه بعد هذا التصحيح، خلافًا لتعديل حالة العضوية الذي بقي
+ * في صفحة الطالب من التصحيح السابق).
+ * ----------------------------------------------------------------------- */
+.student-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+
+/* (تصحيح ثامن — أُلغي بطلب صريح من يحيى "خليه مطابق 100%"): كان الغياب
+   يُلوَّن الصفّ كاملًا أصفر (.row-absent) — لم يظهر هذا في مخطّط يحيى الجديد
+   إطلاقًا (كل الصفوف بنفس الخلفية المحايدة بصرف النظر عن الحالة)، فأُزيل
+   الصنف من القالب والـJS معًا. القاعدة أُبقيت معلَّقة هنا (لا حذفًا صامتًا)
+   للتوثيق فقط؛ لا صنف "row-absent" يُضاف لأي صفّ بعد الآن فلن تُطبَّق أبدًا. */
+
+/* بطاقة "إضافة طالب" المؤقّتة (+ إضافة طالب) لا تزال نموذج إدخال (اسم/حلقة/
+   موضع بداية اختياري)، لا بطاقات عرض — تحتفظ بتخطيطها الشبكي القديم بمعزل
+   عن الصفوف العادية أعلاه؛ لا علاقة لها بشكوى يحيى (لم تظهر في صوره أصلًا،
+   فهي ليست الصفّ الذي كان يقصده). */
+.student-row.is-new {
+    display: grid;
+    grid-template-columns: 1.2fr 0.9fr 1.4fr auto;
+    gap: var(--space-3);
+    align-items: end;
+    border-style: dashed;
+    box-shadow: none;
+}
+.student-row.is-new .column-label {
+    display: block; font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted); margin-bottom: 0.2rem;
+}
+.student-row.is-new .row-actions { display: flex; gap: var(--space-2); }
+
+/* بطاقة عامّة — الاسم/الدرس/المراجعة/حضور اليوم/السجلّ كلّها بهذا الشكل
+   الأساسي، بألوان/حشو مختلفَين بحسب النوع (المُعدِّلات أدناه). */
+/* (تصحيح خامس، طلب صريح من يحيى بعد ملاحظته "المستطيلات تتغير قياساتها بعد
+   إضافة البيانات ... المفترض إنها تكون مرنة" و"ليش المستطيلات أقرب لمربعات"
+   عن بطاقات الصفّ تحديدًا — لا عن حقلَي الآية في النافذة، تلك مُعالَجة
+   بقاعدة .modal .cluster > .field أدناه): min-width تضمن أن حالتَي نفس
+   الخليّة (شارة "لم يسمع بعد" القصيرة قبل التسجيل، وبطاقة النطاق الأعرض
+   بعده) تبدآن من نفس الاتّساع الأساسي فلا يبدو الصفّ وكأنه "يقفز" حجمًا بين
+   الحالتين — تبقى مرنة (flex) وتتّسع أكثر عند الحاجة لمحتوى أطول، فقط بلا
+   نقطة بداية صغيرة جدًا. الحشو الأفقي زِيد والرأسي قُلِّل قليلًا
+   (0.65rem→0.55rem) لتبدو البطاقات مستطيلة بوضوح بدل أقرب لمربعات كما كانت. */
+.chip {
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: var(--space-3);
-    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
-}
-
-.student-row .column-label {
-    display: none;
-    font-size: 0.75rem;
+    padding: 0.55rem 1.25rem;
     font-weight: 700;
-    color: var(--color-text-muted);
-    margin-bottom: 0.2rem;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    min-height: 2.75rem;
+    min-width: 6rem;
+    white-space: nowrap;
+}
+button.chip {
+    cursor: pointer; font-family: inherit; appearance: none;
+    transition: box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+button.chip:hover { box-shadow: var(--shadow-md); }
+a.chip { text-decoration: none; }
+
+.chip-name { flex: 0 1 auto; flex-direction: column; gap: 0.2rem; white-space: normal; }
+.chip-name-text { font-weight: 800; }
+.chip-name-meta { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: center; }
+.chip-name-badge {
+    font-size: 0.72rem; font-weight: 700; color: var(--color-text-muted);
+    background: var(--color-surface-alt); border-radius: var(--radius-full);
+    padding: 0.05rem 0.55rem;
 }
 
-.student-row.editing { border-color: var(--color-primary-500); box-shadow: 0 0 0 4px var(--color-primary-100); }
-.student-row.is-new   { border-style: dashed; }
-.student-row.saving   { opacity: 0.7; }
+/* حالة "لم يسمع بعد" (محايدة، بلا تلوين إضافي فوق .chip الأساسية) و"لم
+   يحفظ" (أحمر بارز — لون مأخوذ من الصورة المرجعية مباشرة). */
+.chip-simple--danger { background: var(--status-danger-chip-bg); border-color: var(--status-danger-chip-bg); color: var(--status-danger-chip-text); }
 
-.student-row .row-actions { display: flex; gap: var(--space-2); }
+/* بطاقة النطاق الفعلي (من/إلى) — بلا حشو خاصّ بها؛ الحشو داخل كل نصف
+   (.range-chip-part) بدل ذلك حتى يفصل الخطّ الرأسي بينهما من الحافة للحافة. */
+/* (تصحيح S31): flex-wrap على .chip-range تسمح لمحتوى البطاقة (نقطة الحالة +
+   نطاق القراءة + تسمية الكمّية) بالانتقال لسطر ثانٍ داخل نفس البطاقة عندما
+   لا يتّسع كلّه بعرض واحد ضمن max-width أعلاه، فتكبر البطاقة رأسيًا داخل
+   صفّها فقط بدل أن تفيض أفقيًا فوق العمود المجاور. ارتفاع الصفّ في CSS Grid
+   مستقلّ عن الصفوف الأخرى فلا يتأثر أي صفّ آخر بهذا النموّ الرأسي. */
+/* (تصحيح S33 — بلاغ يحيى: "المستطيل حق البيانات... لمن يمتلي بيانات يخرب
+   شكله"): S31 كانت أضافت flex-wrap على .range-chip-parts نفسها أيضًا (لا
+   على .chip-range فقط) تحسّبًا لحالة نادرة، فكانت النتيجة أن نصفَي "من"/
+   "إلى" يرتصّان فوق بعضهما (لا جنبًا لجنب) بمجرّد طول المدى، فيختفي الخطّ
+   الفاصل الرأسي بينهما ويصبح شكل البطاقة "قائمة أسطر" عاديّة بدل "بطاقة
+   مقسومة" — شكل مختلف تمامًا عن البطاقة القصيرة المجاورة لها في نفس الصفّ
+   رغم أنهما نفس نوع العنصر. أُعيد .range-chip-parts لعدم الالتفاف (يبقى
+   الفاصل الرأسي واضحًا دومًا)، وبدل ذلك أُتيح النصّ نفسه (.range-chip-value)
+   للف داخل نصفه هو حين يطول (min-width:0 على .range-chip-part يسمح له
+   بالانكماش، وحذف white-space:nowrap عن القيمة يسمح لها بالنزول سطرين عند
+   الحاجة) — فتكبر البطاقة كاملة بانتظام (كلا النصفين معًا) بدل أن ينقلب
+   شكلها الداخلي. */
+.chip-range { padding: 0; overflow: hidden; flex-wrap: wrap; }
+.range-chip-parts { display: flex; align-items: stretch; }
+.range-chip-single { padding: 0 var(--space-2); white-space: normal; }
+.range-chip-part {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.2rem; padding: 0.4rem 1.1rem;
+    min-height: 2.75rem; /* يطابق min-height الأساسي لـ.chip فلا يبدو أطول من الشارة قبل التسجيل */
+    min-width: 0;
+}
+.range-chip-value { font-weight: 700; }
+.range-chip-caption { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); }
+.range-chip-divider { width: 1px; align-self: stretch; margin: 0.5rem 0; background: var(--color-border); flex-shrink: 0; }
 
-.student-status { min-width: 132px; }
+.chip-undo {
+    border: none; background: transparent; color: var(--color-text-muted);
+    cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0 0.2rem;
+}
+.chip-undo:hover { color: var(--color-danger-600); }
+
+/* حضور اليوم — بطاقة صغيرة واحدة تفتح نافذة الاختيار، تُعرض دومًا (حاضر/
+   مستأذن/غائب بعذر/غائب بدون عذر) بلا أي طيّ للصفّ أو استثناء — تصحيح ثامن،
+   بطلب صريح من يحيى "خليه مطابق 100%" لمخطّطه الجديد.
+ *
+ * ألوان "حاضر"/"مستأذن" مأخوذة من الصور المرجعية القديمة (حاضر) أو مُشتقّة
+ * بنفس درجة التشبّع (مستأذن). ألوان "غائب بعذر"/"غائب بدون عذر" مقيسة
+ * بكسل-بكسل من مخطّط يحيى الجديد (رمادي محايد، لا تمييز لوني بين صيغتَي
+ * الغياب عمدًا — نفس فلسفة .row-absent الملغاة أعلاه: لون واحد لأيّ صيغة
+ * غياب). شكل الشارة (كبسولة مستديرة بالكامل + نقطة صغيرة بلون النص) مقيس
+ * من نفس المخطّط لكل الحالات الأربع بلا استثناء الآن (تصحيح سابع كان قد
+ * استثنى الغياب مؤقّتًا بانتظار حسم تعارض الصفّ المطوي — الآن محسوم).
+ *
+ * (تصحيح S33 — بلاغ يحيى: "ليش حدود زر التحضير مش بنفس حدود بقية
+ * المستطيلات"): الشكل الكبسولي (radius-full) كان قرارًا صريحًا سابقًا
+ * مقيسًا من صورة مرجعية حقيقية، لكنه الآن الشارة الوحيدة في صفّ الطالب
+ * بزاوية مختلفة تمامًا عن كل شارة أخرى (الدرس/المراجعة/الإجراءات) التي
+ * تستعمل جميعًا radius-md — فيبدو "غير مطابق" وسط صفّ موحَّد الشكل عمدًا في
+ * كل مكان آخر. وُحِّد الشكل هنا مع البقية (radius-md)؛ الألوان والنقطة
+ * الصغيرة لكل حالة (المقيسة بكسل-بكسل) لم تُمَسّ إطلاقًا. */
+.chip-attendance {
+    border-radius: var(--radius-md);
+}
+.chip-attendance[data-status="حاضر"] { background: var(--status-present-bg); border-color: var(--status-present-bg); color: var(--status-present-text); }
+.chip-attendance[data-status="مستأذن"] { background: var(--status-excused-bg); border-color: var(--status-excused-bg); color: var(--status-excused-text); }
+.chip-attendance[data-status="غائب بعذر"],
+.chip-attendance[data-status="غائب بدون عذر"] { background: var(--status-absent-bg); border-color: var(--status-absent-bg); color: var(--status-absent-text); }
+.chip-attendance[data-status="حاضر"]::after,
+.chip-attendance[data-status="مستأذن"]::after,
+.chip-attendance[data-status="غائب بعذر"]::after,
+.chip-attendance[data-status="غائب بدون عذر"]::after {
+    content: '';
+    display: inline-block;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.75;
+}
+
+.chip-action { background: var(--status-neutral-chip-bg); border-color: var(--status-neutral-chip-bg); color: var(--color-text); }
+.chip-action:hover { filter: brightness(0.96); }
+
+/* (تصحيح S33 — بلاغ يحيى: "ليش ما فيه مسافة بين زر التسجيل السريع وزر
+   السجل" و"ليش كلهم بنفس اللون"): الزرّان في عمودَين منفصلين فعلًا بفاصل
+   شبكة حقيقي (gap)، لكن كونهما بنفس اللون تمامًا (خلفية = حدّ، بلا حدّ
+   ظاهر لأيّ منهما) يجعلهما بصريًا يلتحمان ككتلة واحدة رغم الفاصل. "تسجيل
+   سريع" هو الإجراء الأساسي المتكرّر يوميًا لكل طالب، فأُعطي لون الإجراء
+   الأساسي القائم أصلًا في الموقع (نفس var(--color-primary-500) المستعمل
+   لزرّ "الكل" النشط وأزرار .btn-primary)، بينما "السجلّ" (رابط تصفّح ثانوي
+   لصفحة الطالب الكاملة) بقي بلونه المحايد كما كان — فيتمايز الزرّان لونيًا
+   بوضوح، ويصبح الفاصل بينهما مُدرَكًا بصريًا لا مجرّد مسافة رقمية. */
+.chip-action-primary {
+    background: var(--color-primary-500);
+    border-color: var(--color-primary-500);
+    color: var(--color-text-on-primary);
+}
+.chip-action-primary:hover { background: var(--color-primary-600); border-color: var(--color-primary-600); filter: none; }
+
+/* تُستعمَل الآن في attendance/index.blade.php (شاشة العرض فقط) لعرض الاسم/
+   الحلقة كنصّ ثابت داخل صفّها الخاصّ (.attendance-record-row) — كانت أصلًا
+   جزءًا من صفّ الطالب هنا قبل تصحيحات S23، بقيت للاستعمال الوحيد المتبقّي
+   لها فقط. */
 .position-display {
     display: flex; align-items: center; min-height: 2.6rem;
     padding: 0 0.9rem; font-size: 0.95rem;
 }
 
-/* بحث وفلترة + رأس أعمدة قابل للفرز (S11) */
+/* بحث وفلترة (S11، الفلاتر المتقدّمة S18) — بقيت كما هي فوق القائمة، بلا
+   تغيير من هذا التصحيح. رأس الأعمدة القابل للفرز القديم أُزيل مع الشبكة
+   الثابتة (راجع تعليق dashboard.blade.php) — الفرز عبر ?sort=/&dir= في
+   الرابط ما زال يعمل، فقط واجهة النقر عليه من رأس عمود اختفت مع العمود. */
 .search-filter-form {
     display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
     margin-bottom: var(--space-4);
 }
 .search-filter-form .input[type="search"] { flex: 1; min-width: 200px; }
 
-.students-table-head {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr 1.3fr 140px auto;
-    gap: var(--space-3);
-    padding: 0 var(--space-3);
-    margin-bottom: var(--space-2);
-    font-size: 0.8rem;
-    color: var(--color-text-muted);
-    font-weight: 700;
-}
-.students-table-head .col-sort {
-    color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;
-}
-.students-table-head .col-sort:hover { color: var(--color-text); }
-.students-table-head .col-sort.active { color: var(--color-primary-700); }
-.students-table-head .col-sort::after { content: '↕'; opacity: 0.4; font-size: 0.75rem; }
-.students-table-head .col-sort.active.asc::after { content: '↑'; opacity: 1; }
-.students-table-head .col-sort.active.desc::after { content: '↓'; opacity: 1; }
-
 @media (max-width: 760px) {
-    .student-row {
-        grid-template-columns: 1fr;
-    }
-    .student-row .column-label { display: block; }
-    .student-row .row-actions { justify-content: flex-end; }
-    .students-table-head { display: none; }
+    .student-row.is-new { grid-template-columns: 1fr; }
     .search-filter-form { flex-direction: column; align-items: stretch; }
 }
 
@@ -671,6 +1063,13 @@ img, svg { display: block; max-width: 100%; }
 .auth-card .switch-link { text-align: center; margin-top: var(--space-5); color: var(--color-text-muted); }
 .auth-card .switch-link a { color: var(--color-primary-600); font-weight: 700; text-decoration: underline; }
 .auth-card .forgot-link { display: block; text-align: left; margin-top: -0.5rem; margin-bottom: var(--space-4); font-size: 0.9rem; color: var(--color-primary-600); text-decoration: underline; }
+
+/* شعار "رِواق" الكامل أعلى بطاقة تسجيل الدخول — نفس منطق تبديل is-light/
+   is-dark أعلاه (.brand-mark-img). */
+.auth-logo { display: block; max-width: 210px; margin: 0 auto var(--space-5); }
+.auth-logo.is-dark { display: none; }
+:root[data-theme="dark"] .auth-logo.is-light { display: none; }
+:root[data-theme="dark"] .auth-logo.is-dark { display: block; }
 
 /* -------------------------------------------------------------------------
  * 15) بطاقة الملف الشخصي
@@ -767,16 +1166,82 @@ img, svg { display: block; max-width: 100%; }
     display: inline-block; padding: 0.15rem 0.6rem; border-radius: var(--radius-full);
     font-size: 0.75rem; font-weight: 700; background: var(--color-primary-100); color: var(--color-primary-700);
 }
-.type-chip.type-مراجعة { background: #eaf1f8; color: var(--color-info-500); }
+.type-chip.type-مراجعة { background: var(--color-info-50); color: var(--color-info-500); }
 .type-chip.type-تسميع { background: var(--color-warning-50); color: var(--color-warning-500); }
-.grade-chip { font-size: 0.75rem; color: var(--color-text-muted); }
+/* تبويب "السجلات" الموحَّد (S26) يعرض سجلّات متون ضمن نفس القائمة الزمنية —
+   صنف جديد وحيد بلون عائلة "نجاح" (مستقلّ عن حفظ/مراجعة/تسميع) لتمييزها. */
+.type-chip.type-متن { background: var(--color-success-50); color: var(--color-success-600); }
+.status-chip { font-size: 0.75rem; color: var(--color-text-muted); } /* كانت .grade-chip قبل S22 */
+
+/* "السجلّات الأخيرة" — صفحة الطالب (S23.5، استئناف التصميم بطلب يحيى): شبكة
+   بطاقات أفقية بدل القائمة العمودية القديمة ذات الخطّ الجانبي (.timeline
+   أعلاه، أُبقيت أصنافها القديمة بلا حذف لأن `type-chip`/`status-chip`/
+   `timeline-date`/`timeline-notes` ما زالت مستعملة هنا حرفيًا). شريط علوي
+   ملوَّن بلون النوع (بنفس ألوان `.type-chip` تمامًا) يميّز كل بطاقة من أوّل
+   نظرة حتى بلا قراءة الشارة النصّية. */
+.records-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-3);
+}
+.record-card {
+    position: relative; overflow: hidden;
+    padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    display: flex; flex-direction: column; gap: var(--space-2);
+}
+.record-card::before {
+    content: ''; position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--color-primary-500);
+}
+.record-card[data-type="مراجعة"]::before { background: var(--color-info-500); }
+.record-card[data-type="تسميع"]::before { background: var(--color-warning-500); }
+.record-card[data-type="متن"]::before { background: var(--color-success-500); }
+.record-card-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+.record-card-title { font-weight: 700; margin: 0; }
+.record-card-footer { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); margin-top: auto; padding-top: var(--space-1); }
 
 /* -------------------------------------------------------------------------
  * 20) منحنى التقدّم (S8)
  * ----------------------------------------------------------------------- */
 .chart-card canvas { max-width: 100%; }
+
+/* شبكة "التحليلات والإحصائيات" — صفحة الطالب (S23.5، إعادة التصميم بنمط
+   هرماس): تجمع بطاقات المنحنيَين والتقويم في شبكة عمودين على الشاشات الواسعة
+   بدل صفّ عمودي واحد طويل — كل بطاقة تبقى `.card.card-pad` كما هي بلا تغيير
+   في مضمونها، الجديد فقط الغلاف. `minmax(380px, 1fr)` يسمح بعمودين حين
+   تتّسع الشاشة ويرجع لعمود واحد تلقائيًا على الجوال بلا استعلام وسائط
+   إضافي. (كانت أربع بطاقات أصلًا؛ بعد إلغاء بطاقة "نشاط المراجعة الشهري"
+   بطلب يحيى صارت ثلاثًا — راجع أدناه لماذا التقويم يمتدّ عرض الصفّ كاملًا.) */
+.analytics-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: var(--space-5);
+}
+.analytics-grid > .card { margin-top: 0; }
+/* بطاقة التقويم هي الثالثة (الأخيرة) في شبكة عمودين بثلاث بطاقات، فتقع
+   وحيدة في صفّها الأخير وتترك فراغًا واضحًا بجانبها — كان يملؤه سابقًا
+   منحنى "نشاط المراجعة الشهري" قبل إلغائه (بطلب يحيى 2026-09-23). `1 / -1`
+   يمدّها لتملأ عرض الصفّ بأكمله؛ على الجوال (عمود واحد) لا يُحدِث أي فرق
+   لأن العمود الوحيد أصلًا يمتدّ العرض كاملًا. */
+.analytics-grid .calendar-card { grid-column: 1 / -1; }
+
+/* شبكة نموذجَي "إضافة سجلّ حفظ"/"إضافة سجلّ مراجعة" جنبًا لجنب — صفحة
+   الطالب (S23.5، استئناف التصميم بطلب يحيى "يلا أبدأ التصميم"). نفس نمط
+   .analytics-grid أعلاه حرفيًا (auto-fit بحدّ أدنى 380px يتراصّ عموديًا
+   تلقائيًا على الجوّال) لا صنف جديد من الصفر. */
+.paired-forms-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: var(--space-5);
+    margin-top: var(--space-5);
+}
+.paired-forms-grid > .card { margin-top: 0; }
+
 .student-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-3); }
 .student-header h1 { margin: 0 0 var(--space-1); }
+
+/* أزرار "تعديل"/"حذف الطالب" (طلب صريح من يحيى: أعلى يسار سجلّ الطالب) —
+   عنصر شقيق ثانٍ داخل .student-header، فـ justify-content:space-between
+   أعلاه يضعه تلقائيًا في الطرف المقابل للاسم بلا أي خاصية position. */
+.student-header-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
 
 /* -------------------------------------------------------------------------
  * 21) الحضور (S9)
@@ -809,10 +1274,15 @@ img, svg { display: block; max-width: 100%; }
     transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 .status-btn:hover { background: var(--color-surface-alt); }
+/* (S22) "غائب" السابقة انقسمت إلى معذور/غير معذور، و"متأخر" أُلغيت — عائلة
+   التحذير (warning) التي كانت لـ"متأخر" صارت لـ"غائب بعذر" (غياب أخفّ حدّة
+   من غير المعذور)، وعائلة الخطر (danger) بقيت لأشدّ الحالتين: "غائب بدون
+   عذر". الترتيب البصري الآن: نجاح < معلومة < تحذير < خطر، يطابق حاضر <
+   مستأذن < غائب بعذر < غائب بدون عذر تربويًا. */
 .status-btn.selected[data-status="حاضر"] { background: var(--color-success-50); border-color: var(--color-success-500); color: var(--color-success-600); }
-.status-btn.selected[data-status="غائب"] { background: var(--color-danger-50); border-color: var(--color-danger-500); color: var(--color-danger-600); }
-.status-btn.selected[data-status="متأخر"] { background: var(--color-warning-50); border-color: var(--color-warning-500); color: var(--color-warning-500); }
-.status-btn.selected[data-status="مستأذن"] { background: #eaf1f8; border-color: var(--color-info-500); color: var(--color-info-500); }
+.status-btn.selected[data-status="مستأذن"] { background: var(--color-info-50); border-color: var(--color-info-500); color: var(--color-info-500); }
+.status-btn.selected[data-status="غائب بعذر"] { background: var(--color-warning-50); border-color: var(--color-warning-500); color: var(--color-warning-500); }
+.status-btn.selected[data-status="غائب بدون عذر"] { background: var(--color-danger-50); border-color: var(--color-danger-500); color: var(--color-danger-600); }
 .attendance-row .note-input { width: 180px; }
 
 /* تقويم الحضور — صفحة الطالب (S9) */
@@ -829,15 +1299,21 @@ img, svg { display: block; max-width: 100%; }
 .calendar-day.is-empty { background: transparent; }
 .calendar-day .day-num { font-weight: 700; }
 .calendar-day[data-status="حاضر"] { background: var(--color-success-50); color: var(--color-success-600); }
-.calendar-day[data-status="غائب"] { background: var(--color-danger-50); color: var(--color-danger-600); }
-.calendar-day[data-status="متأخر"] { background: var(--color-warning-50); color: var(--color-warning-500); }
-.calendar-day[data-status="مستأذن"] { background: #eaf1f8; color: var(--color-info-500); }
+.calendar-day[data-status="مستأذن"] { background: var(--color-info-50); color: var(--color-info-500); }
+.calendar-day[data-status="غائب بعذر"] { background: var(--color-warning-50); color: var(--color-warning-500); }
+.calendar-day[data-status="غائب بدون عذر"] { background: var(--color-danger-50); color: var(--color-danger-600); }
 .calendar-legend { display: flex; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-4); font-size: 0.8rem; color: var(--color-text-muted); }
 .calendar-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
 .calendar-legend .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
-.calendar-legend .dot.حاضر { background: var(--color-success-500); }
-.calendar-legend .dot.غائب { background: var(--color-danger-500); }
-.calendar-legend .dot.متأخر { background: var(--color-warning-500); }
+/* (S22) نقاط الوسيلة الآن عبر [data-status] لا صنف خام (راجع تعليق سطر
+   markup في students/show.blade.php: بعض القيم الجديدة تحتوي مسافة —
+   "غائب بعذر" — فوضعها صنفًا مباشرًا يُقسِّمها المتصفّح خطأً إلى صنفين).
+   أُضيفت أيضًا نقطة "مستأذن" الناقصة أصلًا (لم يكن لها لون في الوسيلة
+   قبل هذا التصحيح). */
+.calendar-legend .dot[data-status="حاضر"] { background: var(--color-success-500); }
+.calendar-legend .dot[data-status="مستأذن"] { background: var(--color-info-500); }
+.calendar-legend .dot[data-status="غائب بعذر"] { background: var(--color-warning-500); }
+.calendar-legend .dot[data-status="غائب بدون عذر"] { background: var(--color-danger-500); }
 
 /* -------------------------------------------------------------------------
  * 22) لوحة التقارير (S10)
@@ -849,7 +1325,20 @@ img, svg { display: block; max-width: 100%; }
     gap: var(--space-4);
 }
 .stat-card .stat-label { color: var(--color-text-muted); font-size: 0.85rem; font-weight: 700; }
-.stat-card .stat-value { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; margin-top: var(--space-1); }
+.stat-card .stat-value { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; margin-top: var(--space-1); font-variant-numeric: tabular-nums; }
+
+/* مؤشّر الاتجاه (v2) — يقارن القيمة الحالية بفترة سابقة مماثلة. الأيقونة نصّية
+   (▲/▼) لا SVG لتبسيط توليدها من Blade مباشرة برقم الفرق، والحالة (up/down)
+   تُلوَّن بنجاح/خطر فقط كتعزيز إضافي فوق الاتجاه — لا اعتماد كليًا على اللون
+   لأن الرمز والنص المصاحب (+٣٪) يحملان المعنى أيضًا. */
+.stat-trend {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    margin-top: var(--space-1); font-size: 0.8rem; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.stat-trend--up { color: var(--color-success-600); }
+.stat-trend--down { color: var(--color-danger-600); }
+.stat-trend--flat { color: var(--color-text-muted); }
 
 .status-breakdown { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 
@@ -863,11 +1352,23 @@ img, svg { display: block; max-width: 100%; }
 .report-range-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
 .report-range-form .field { margin-bottom: 0; }
 
+/* مركز روابط التقارير (S37 — بند 5): بطاقات تنقّل واضحة لكل تقرير مستقلّ،
+   أعلى لوحة التقارير الرئيسية. */
+.report-links-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-4);
+}
+.report-link-card { display: block; text-decoration: none; color: inherit; transition: box-shadow 0.15s ease, transform 0.15s ease; }
+.report-link-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.report-link-card h2 { font-size: 1.05rem; }
+.report-link-card p { margin-bottom: 0; font-size: 0.85rem; }
+
 .print-header { display: none; }
 
 .table-scroll { overflow-x: auto; }
 .report-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .report-table th, .report-table td { padding: var(--space-2) var(--space-3); text-align: start; border-bottom: 1px solid var(--color-border); }
+.report-table td { font-variant-numeric: tabular-nums; }
 .report-table thead th { color: var(--color-text-muted); font-weight: 700; font-size: 0.8rem; }
 
 /* طباعة التقرير كـ PDF عبر المتصفّح مباشرة (بلا مكتبة توليد PDF — S10):
@@ -887,16 +1388,37 @@ img, svg { display: block; max-width: 100%; }
  * على <html> (لا prefers-color-scheme وحدها) حتى يملك المعلّم تحكّمًا صريحًا
  * لا يتبع إعداد نظام تشغيله فقط، مع حفظ اختياره في localStorage.
  * ----------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------
+ * الوضع الليلي — إعادة بناء كاملة (S34)
+ *
+ * بلاغ يحيى: "تغيير جذري في ألوان الدارك من أصغر زر لأكبر شيء وهو الخلفية...
+ * ألوان ليلية هادئة مريحة للعين وغير مؤذية لمن لديهم عمى ألوان". عُرض عليه
+ * مقترحان حقيقيان (لا تخمين) — خلفية "زيتونية دافئة" أو خلفية "رمادية حيادية
+ * باردة" — بمعاينة بصرية فعلية لكل عناصر الواجهة الحقيقية معًا، واختار
+ * الخيار الثاني (ب) صراحةً. الخلفية بالكامل هنا رمادية حيادية باردة جديدة
+ * كليًا (لا امتداد للزيتوني الدافئ القديم) بينما يبقى الأخضر الأساسي هوية
+ * البرنامج للأزرار الرئيسية فقط.
+ *
+ * ألوان الشارات (present/excused/danger-chip) هنا **مُتحقَّق منها فعليًا لا
+ * تخمينًا**: شُغِّلت أداة قياس حقيقية لفروقات الألوان (OKLab ΔE) لكل أنواع
+ * عمى الألوان على المجموعة الأربع معًا (فيروزي/بنفسجي فاتح/رمادي/برتقالي
+ * مرجاني) — اجتازت فحص التمييز الكامل (ΔE ≥ 8 لعمى الألوان، ΔE ≥ 15 للرؤية
+ * الطبيعية) معًا. أخطاء المحاولة السابقة (S33) كانت شارات داكنة خافتة
+ * التشبّع (فرق ٤.١ فقط بين الأخضر والأحمر لعمى الألوان — فشل واضح) لأن
+ * تضييق مساحة الألوان عند انخفاض السطوع يُصعِّب التمييز رياضيًا؛ الحل هنا
+ * معاكس تمامًا: شارة أفتح قليلًا ومتوسطة التشبّع (لا داكنة خافتة، ولا فاتحة
+ * فاقعة) مع نصّ داكن فوقها — نفس مبدأ الشارات النهارية الحالية لكن معايرة
+ * لطيف الليل. */
 :root[data-theme="dark"] {
-    --color-primary-50:  #2a301c;
-    --color-primary-100: #333c22;
-    --color-primary-300: #7c8a52;
-    --color-primary-500: #93a75c;
-    --color-primary-600: #a9bd74;
-    --color-primary-700: #c7d69e;
+    --color-primary-50:  #1c241a;
+    --color-primary-100: #2b3524;
+    --color-primary-300: #6f8a52;
+    --color-primary-500: #7fa860;
+    --color-primary-600: #93bd74;
+    --color-primary-700: #b4d69e;
 
-    --color-accent-500: #cfc6a8;
-    --color-accent-600: #ede8da;
+    --color-accent-500: #c7ccd1;
+    --color-accent-600: #e8eaec;
 
     --color-success-50:  #1f3324;
     --color-success-500: #5fae70;
@@ -909,17 +1431,51 @@ img, svg { display: block; max-width: 100%; }
     --color-warning-50:  #3a2f14;
     --color-warning-500: #e0b246;
 
+    /* info-50 الليلي (S21) — بنفس عمق ٥٠ الداكن المعتمد لبقية عائلة الحالة
+       أعلاه (نجاح/خطر/تحذير)، بدرجة اللون الأزرق نفسها المستعملة في
+       --color-info-500 النهاري كأساس. */
+    --color-info-50: #1c2e3b;
     --color-info-500: #6fa8d0;
 
-    --color-bg:          #1c1a15;
-    --color-surface:     #262319;
-    --color-surface-alt: #302c1f;
-    --color-border:      #3d3826;
-    --color-border-strong: #4f4830;
+    /* خلفية "الرمادي الحيادي البارد" (الخيار ب، S34) — رمادي أزرق هادئ جدًا
+       للعين، لا امتداد للون الزيتوني الدافئ في النهار، بلا أسود خالص (يسبّب
+       وهجًا حادًّا) وبلا أي تشبّع يذكر. */
+    --color-bg:          #16181a;
+    --color-surface:     #1e2124;
+    --color-surface-alt: #262a2e;
+    --color-border:      #34383d;
+    --color-border-strong: #454a50;
 
-    --color-text:        #ede8da;
-    --color-text-muted:  #b3ab94;
-    --color-text-on-primary: #1c1a15;
+    --color-text:        #e6e8ea;
+    --color-text-muted:  #9aa0a6;
+    --color-text-on-primary: #12140f;
+
+    /* status-absent (رمادي محايد أصلًا — يعمل بلا تعديل جوهري، فقط معايرة
+       طفيفة ليتناسق مع الرمادي البارد الجديد بدل الرمادي الدافئ القديم). */
+    --status-absent-bg: #4a4e53;
+    --status-absent-text: #eef0f2;
+
+    /* أربع شارات الحالة الأساسية — مجموعة واحدة مُتحقَّق منها بالكامل لعمى
+       الألوان (راجع تعليق القسم أعلاه)، بنمط "شارة متوسطة السطوع + نصّ
+       داكن" الذي اجتاز الفحص، بدل نمط S33 (شارة داكنة + نصّ فاتح) الذي فشل. */
+    --status-present-bg: #22b8b0;
+    --status-present-text: #0d2b28;
+    --status-excused-bg: #7c93ff;
+    --status-excused-text: #14173d;
+    --status-danger-chip-bg: #ff6a52;
+    --status-danger-chip-text: #3a1109;
+    --status-neutral-chip-bg: #2e3236;
+
+    /* حلقة تركيز الإدخال ولون النائب — معايرة لدرجة primary-500 الجديدة
+       ولخلفية الرمادي البارد الجديدة. */
+    --color-focus-ring: rgba(127, 168, 96, 0.45);
+    --color-placeholder: #7a8085;
+
+    --overlay-scrim: rgba(10, 11, 12, 0.72);
+
+    --chart-memorization: #3987e5;
+    --chart-review: #199e70;
+    --chart-poem: #d95926;
 }
 
 .theme-toggle {
@@ -958,7 +1514,7 @@ img, svg { display: block; max-width: 100%; }
 
 .accounts-table-head {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 0.5fr 1fr 0.8fr auto;
+    grid-template-columns: 1.4fr 1fr 0.5fr 1fr 0.8fr;
     gap: var(--space-3);
     padding: 0 var(--space-3);
     margin-bottom: var(--space-2);
@@ -967,9 +1523,19 @@ img, svg { display: block; max-width: 100%; }
     font-weight: 700;
 }
 
+/* (تصحيح لاحق، طلب صريح من يحيى 2026-09-23: "تتداخل المربعات والنصوص في
+   بعضها" عند فتح "تعديل اسم المستخدم"/"تخصيص كلمة مرور") — السبب الفعلي:
+   كان عمود الإجراءات آخر عمود بعرض "auto" ضمن نفس شبكة الأعمدة الستّة، و
+   "auto" يتحجّم حسب أقصى محتوى ممكن للعنصر (كل الأزرار + النموذج المفتوح
+   على سطر واحد افتراضيًا)، فيتّسع هذا العمود بشراهة على حساب بقية الأعمدة
+   (الاسم تحديدًا) بمجرّد فتح أي نموذج مضمَّن — تأكّدتُ من هذا بإعادة إنتاج
+   العطل فعليًا بلقطة شاشة قبل الإصلاح. الحل: صفّ الإجراءات لم يعد عمودًا
+   ضمن الشبكة نفسها؛ صار صفًّا مستقلًّا يمتدّ بعرض الشبكة كاملة أسفل صفّ
+   المعلومات (grid-column: 1 / -1)، فيتّسع رأسيًا (لا أفقيًا على حساب جيرانه)
+   مهما بلغ عدد الأزرار/النماذج المفتوحة. */
 .account-row {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 0.5fr 1fr 0.8fr auto;
+    grid-template-columns: 1.4fr 1fr 0.5fr 1fr 0.8fr;
     gap: var(--space-3);
     align-items: center;
     background: var(--color-surface);
@@ -990,11 +1556,51 @@ img, svg { display: block; max-width: 100%; }
 .account-name { font-weight: 700; display: block; }
 .account-meta { font-size: 0.85rem; color: var(--color-text-muted); display: block; }
 
-.account-actions { flex-direction: row; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
+.account-actions {
+    grid-column: 1 / -1;
+    flex-direction: row; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-start;
+    padding-top: var(--space-3);
+    margin-top: var(--space-1);
+    border-top: 1px solid var(--color-border);
+}
 .inline-form { display: inline; }
+/* حقل النموذج المضمَّن (تعديل اسم مستخدم/تخصيص كلمة مرور) — بلا عرض أدنى
+   كان يعتمد على العرض الافتراضي للمتصفّح لحقل <input> (ضيّق جدًا)، فيبدو
+   مضغوطًا الآن أن صفّ الإجراءات صار عريضًا بعرض الشبكة كاملة. */
+.inline-password-form .input { min-width: 200px; flex: 1 1 200px; }
 
 .btn-danger-ghost { color: var(--color-danger-600); }
 .btn-danger-ghost:hover { background: var(--color-danger-50); }
+
+/* تبويب "السجلات" (S26، أُعيد بناؤه 2026-09-23 كدليل بسيط بكل الطلاب) —
+   نفس فلسفة .accounts-table/.account-row (بطاقة أفقية على الشاشة الواسعة
+   تنقلب عمودية على الهاتف) بشبكة أعمدة أضيق (اسم + حلقة + إجراء فقط، لا
+   ستّة أعمدة كصفّ حساب المعلّم). */
+.student-directory { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.student-directory-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr auto;
+    gap: var(--space-3);
+    align-items: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+}
+
+.student-directory-row.is-new { border-color: var(--color-primary-500); }
+.student-directory-row .column-label {
+    display: none;
+    font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted);
+}
+.student-directory-actions { display: flex; gap: var(--space-2); justify-content: flex-end; }
+
+@media (max-width: 860px) {
+    .student-directory-row { grid-template-columns: 1fr; }
+    .student-directory-row .column-label { display: block; }
+    .student-directory-actions { justify-content: flex-start; }
+}
 
 .username-chip {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1076,3 +1682,312 @@ img, svg { display: block; max-width: 100%; }
     color: var(--color-accent-600);
 }
 .progress-stat .stat-label { font-size: 0.85rem; color: var(--color-text-muted); }
+
+/* -------------------------------------------------------------------------
+ * 27) فلاتر منسدلة موحّدة، شارات صف الطالب، ورأس بطاقة المنحنى (S19.5)
+ *
+ * كل ما في هذا القسم كان قبل S19.5 تنسيقًا مضمَّنًا (style="...") مكرَّرًا
+ * حرفيًا في أربع قوالب مختلفة (dashboard، reports/index، reports/period،
+ * وحتى رأس بطاقة منحنى صفحة الطالب) — وهذا بالضبط أصل شعور "ملخبط وغير
+ * منسّق": نفس المكوّن البصري بعدّة نسخ منفصلة قد تنحرف عن بعضها بمرور الوقت.
+ * توحيدها هنا يضمن أن أي تعديل مستقبلي (لون، مسافة، نصف قطر) يُطبَّق مرّة
+ * واحدة على كل الواجهات دفعة واحدة، بدل البحث عنه في كل قالب على حدة.
+ *
+ * لوحة الفلتر تحديدًا كانت عنصر <div> عاديًا في تدفّق الصفحة (position: static
+ * ضمنيًا) يدفع بقية عناصر النموذج والجدول للأسفل عند كل فتح — سلوك غريب
+ * لعنصر يُفترض أنه "قائمة منسدلة". أصبحت الآن معلَّقة (position: absolute)
+ * فوق بقية المحتوى كأي قائمة منسدلة حديثة، وتعود لتدفّق الصفحة الطبيعي على
+ * الهاتف فقط (نفس نقطة الكسر 760px المعتمدة أصلًا في قسم 12) تفاديًا لخروج
+ * لوحة معلَّقة عن حدود شاشة ضيّقة.
+ * ----------------------------------------------------------------------- */
+.filter-dropdown { position: relative; }
+.filter-dropdown > summary { list-style: none; cursor: pointer; }
+.filter-dropdown > summary::-webkit-details-marker { display: none; }
+.filter-dropdown > summary::after { content: ' ▾'; font-size: 0.8em; }
+.filter-dropdown[open] > summary::after { content: ' ▴'; }
+
+.filter-dropdown-panel {
+    position: absolute;
+    inset-inline-start: 0;
+    top: calc(100% + var(--space-1));
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 200px;
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+}
+.filter-dropdown-panel label {
+    display: flex; align-items: center; gap: var(--space-2);
+    font-size: 0.9rem; font-weight: 400; color: var(--color-text); cursor: pointer;
+}
+.filter-dropdown-panel .input { margin: 0; }
+.filter-dropdown-panel.is-narrow { min-width: 160px; }
+
+@media (max-width: 760px) {
+    /* الهاتف هو الجهاز الأساسي (قسم 12) — لوحة معلَّقة بعرض ثابت قد تتجاوز
+       حافة شاشة ضيّقة، فتعود إلى التدفّق الطبيعي وعرض كامل هنا كما كانت قبل
+       S19.5، بدل موضع مطلق قد يُقصّ خارج حدود الشاشة. */
+    .filter-dropdown-panel {
+        position: static; width: 100%; min-width: 0;
+        box-shadow: none; margin-top: var(--space-1);
+    }
+}
+
+/* شارتا صفّ الطالب: حضور اليوم وعدد المتون المتتبَّعة (S18) — كانتا بلا صنف
+   CSS مخصَّص، وبنفس اللون المحايد بصرف النظر عن الحالة الفعلية. الآن تتبعان
+   نفس ألوان الحالة المستخدَمة أصلًا في شارات وسجلّ الحضور (قسم 21). */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    margin-inline-start: var(--space-2);
+    padding: 0.05rem 0.6rem;
+    border-radius: var(--radius-full);
+    font-size: 0.78em;
+    font-weight: 700;
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+}
+.status-pill[data-status="حاضر"]           { background: var(--color-success-50); color: var(--color-success-600); }
+.status-pill[data-status="مستأذن"]         { background: var(--color-info-50); color: var(--color-info-500); }
+.status-pill[data-status="غائب بعذر"]      { background: var(--color-warning-50); color: var(--color-warning-500); }
+.status-pill[data-status="غائب بدون عذر"]  { background: var(--color-danger-50); color: var(--color-danger-600); }
+
+/* رأس بطاقة منحنى (صفحة الطالب): العنوان وأزرار تبديل التجميع على صفّ واحد،
+   والحالة النشطة من أزرار التبديل بصنف CSS حقيقي بدل تنسيق مضمَّن من JS
+   (راجع تعليق student-timeline.js — كان يضبط style.textDecoration/fontWeight
+   مباشرة لأن هذا الصنف لم يكن معرَّفًا بعد). */
+.chart-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3);
+}
+.chart-card-head h2 { margin: 0; }
+.granularity-toggle { display: flex; gap: var(--space-1); }
+.granularity-toggle .btn.is-active {
+    background: var(--color-primary-100);
+    color: var(--color-primary-700);
+}
+
+/* صفّ نموذج تخصيص كلمة المرور (لوحة حسابات المعلّمين S13) — كان تنسيقًا
+   مضمَّنًا وحيدًا لا يتكرّر في مكان آخر، لكنه بلا صنف كباقي المكوّنات. */
+.inline-password-form { display: flex; gap: var(--space-2); margin-top: var(--space-2); align-items: center; }
+
+/* -------------------------------------------------------------------------
+ * 22) اللوحة الرئيسية الموحّدة — الدرس + المراجعة + الحضور (S23)
+ *
+ * كانت هذه الأنماط بُنيت أول مرة لتوسيع /attendance، ثم انتقلت مع الميزة
+ * نفسها إلى /dashboard بعد تصحيح صريح من يحيى (كان يقصد بـ"الصفحة الرئيسية"
+ * صفحة "الطلاب" طوال الوقت، لا شاشة الحضور — راجع تعليق StudentController::
+ * index()).
+ *
+ * تصحيح لاحق ثانٍ: .attendance-status-group/.status-btn (قسم 21) كانت في
+ * البداية تظهر مباشرة داخل عمود "حضور اليوم" من كل صفّ (أربعة أزرار حالة
+ * ظاهرة دومًا) — تكسّرت بصريًا في عمود ضيّق ("عفن بصري" بتعبير يحيى)، فنُقلت
+ * إلى نافذة JS مشتركة (راجع #attendanceModalBackdrop في dashboard.blade.php)
+ * تمامًا كنافذة تسجيل الدرس/المراجعة أدناه. الصنفان .attendance-status-group/
+ * .status-btn بقيا بلا تغيير في تعريفهما (قسم 21) لأنهما يُستعملان الآن داخل
+ * النافذة، لا الصفّ.
+ *
+ * تصحيح بصري ثالث (صور مرجعية من يحيى): الصفّ بالكامل أعيد بناؤه من تخطيط
+ * أعمدة شبكيّة (grid) إلى صفّ بطاقات (chips) مرنة (.chip وبقيّة أصناف
+ * .chip-* المعرَّفة قبل هذا القسم مباشرة) يطابق ترتيب/ألوان الصور المرجعية
+ * حرفيًا. الشارة التي كانت من نوع .status-pill.open-attendance-modal حلّت
+ * محلّها بطاقة .chip.chip-attendance (الألوان معرَّفة أعلاه) بنفس صنف الفتح
+ * open-attendance-modal للـJS. رأس الجدول القابل للفرز أُزيل من هذه الصفحة
+ * لأن عروض البطاقات المتفاوتة العرض لا تصطفّ تحت أعمدة ثابتة؛ الفرز عبر
+ * ?sort=/&dir= في الرابط لا يزال يعمل من الخلفية دون واجهة نقر عليه هنا.
+ * ----------------------------------------------------------------------- */
+
+/* تبويبات الحلقات الفعلية — أسماء حلقات المعلّم كما أدخلها بالضبط + "الكل"،
+   لا فترات صلاة (تصحيح لاحق من يحيى). تُستعمل الآن في /dashboard (فوق
+   الجدول) و/attendance (شاشة العرض) معًا. */
+.circle-tabs {
+    display: flex; flex-wrap: wrap; gap: var(--space-2);
+    margin-bottom: var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-3);
+}
+.circle-tab {
+    padding: 0.5rem 1.1rem; border-radius: var(--radius-full);
+    font-size: 0.9rem; font-weight: 700; color: var(--color-text-muted);
+    background: var(--color-surface-alt); text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+.circle-tab:hover { background: var(--color-border); }
+.circle-tab.active { background: var(--color-primary-500); color: #fff; }
+
+/* "لم يحفظ" (S22 status = "غير حافظ") ما زال يُعرَض بلون أحمر بارز داخل
+   بطاقة .chip-simple--danger (معرَّفة أعلاه) بدل صنف .badge-danger القديم —
+   الأصناف .today-badge/.badge-neutral/.badge-danger/.badge-trigger من تصميم
+   العمود الشبكي القديم أُزيلت (تصحيح بصري ثالث)؛ لم يعد أيّ عنصر في الصفّ
+   الجديد يستعملها. .review-amount (تسمية الكمّية المحسوبة تلقائيًا بجانب
+   مدى المراجعة) حُذفت هي الأخرى نهائيًا (القرار #54، طلب صريح من يحيى) —
+   لم تعد تُستعمَل في أي قالب. */
+
+.undo-log-btn {
+    border: none; background: transparent; color: var(--color-text-muted);
+    cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0.2rem;
+}
+.undo-log-btn:hover { color: var(--color-danger-600); }
+
+/* صفّ سجلّ حضور للعرض فقط (/attendance بعد التصحيح) — أربعة أعمدة فقط
+   (اسم، حلقة، حالة، ملاحظة)، بلا أزرار تسجيل ولا نماذج.
+   (تصحيح لاحق 2026-09-23): grid-template-columns هنا كان بلا أثر فعليًا —
+   الصنف الأساس .student-row يضبط display:flex لا grid، فتتجاهله كل
+   المتصفّحات صامتة. أُعيد بناء هذا الصفّ بمعزل عن .student-row (شبكة حقيقية
+   دومًا، لا فقط على الشاشة الواسعة كصفَّي القرآن/المتون أعلاه) بنفس فلسفة
+   .account-row/.student-directory-row تمامًا — عرض بطاقة على الشاشة
+   الواسعة، عمود واحد + تسميات على الهاتف. تحقّق فعلي بلقطة شاشة أظهر الصفّ
+   قبل هذا التصحيح مكسورًا تمامًا (كل حقل على سطره الخاص رغم اسم الصنف). */
+.student-row.attendance-record-row {
+    display: grid;
+    align-items: center;
+    grid-template-columns: 1.2fr 1fr 1fr 1.6fr;
+}
+.attendance-record-row .column-label {
+    display: none;
+    font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted);
+}
+/* (تصحيح S32 — عطل حقيقي مكتشَف بالفحص المباشر لا تخمينًا): هذا الاستثناء
+   لم يكن يعمل فعليًا منذ إنشائه — قاعدة الأساس أعلاه مكتوبة بصنفين معًا
+   (.student-row.attendance-record-row) فتفوز دومًا على هذا الاستثناء
+   بصنف واحد بغضّ النظر عن ترتيبهما في الملف (خصوصية CSS)، فتبقى شبكة
+   الأربعة أعمدة الواسعة مفروضة حتى على أضيق الهواتف — تحقّقتُ بلقطة شاشة
+   فعلية على عرض 390px أظهرت بالضبط نفس "الصفّ المكسور" الذي وثّقه التعليق
+   أعلاه (كل نصّ مضغوط بعمود ضيّق جدًا)، أي أن التصحيح القديم لم يكن يُختبَر
+   إلا على شاشة واسعة لا تُفعِّل هذا الاستثناء أصلًا. الإصلاح: مطابقة نفس
+   صنفَي قاعدة الأساس هنا حتى تفوز الأولوية فعليًا. */
+@media (max-width: 860px) {
+    .student-row.attendance-record-row { grid-template-columns: 1fr; }
+    .attendance-record-row .column-label { display: block; }
+}
+
+/* -------------------------------------------------------------------------
+ * 25.1) نقطة انكسار وسيطة للآيباد عموديًا (S32، القرار #50)
+ *
+ * ثلاث شبكات (.account-row، .student-directory-row، .student-row.
+ * attendance-record-row) كانت تتحوّل لعمود واحد رأسي كامل عند أي عرض تحت
+ * 861px بلا تمييز — مناسب تمامًا لهاتف بعرض 360-430px، لكنه يهدر أكثر من
+ * نصف عرض الشاشة على آيباد عموديًا (768-834px) حيث كل حقل (تسمية + قيمة)
+ * يشغل سطرًا كاملًا وحده وسط فراغ أفقي واسع على الجانبين — هذا بالضبط ما
+ * قصده يحيى بـ"التوازن" على الآيباد. الحل هنا نطاق وسيط جديد (641-860px،
+ * يطابق نقطة انكسار .form-grid-2 القائمة أصلًا عند 640px) يعطي هذه الصفوف
+ * عمودين بدل عمود واحد فقط في هذا النطاق تحديدًا: الحقل الأول (الاسم عادة،
+ * أطول الحقول وأكثرها تفاوتًا في الطول) يمتدّ بعرض كامل، وبقيّة الحقول
+ * تتوزّع عمودين. الهاتف (≤640px) لا يتأثّر، يبقى عمودًا واحدًا كما كان. */
+@media (min-width: 641px) and (max-width: 860px) {
+    .account-row,
+    .student-directory-row,
+    .student-row.attendance-record-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    .account-row > .account-cell:first-child,
+    .student-directory-row > div:first-child,
+    .student-row.attendance-record-row > div:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+/* -------------------------------------------------------------------------
+ * 23) نافذة تسجيل الدرس/المراجعة (S23) — modal JS
+ *
+ * نافذة واحدة مشتركة لكل اللوحة الرئيسية بدل نموذج مضمَّن في كل صفّ (طلب
+ * صريح من يحيى: "خليها نافذة js"). عناصرها ثابتة في الصفحة (hidden افتراضيًا)
+ * ويعاد ملؤها عبر JS في كل مرة تُفتَح.
+ *
+ * عطل حقيقي كان قائمًا هنا بالذات (بلاغ يحيى، أُصلح بالقاعدة العامة
+ * `[hidden] { display: none !important; }` في قسم "2) القاعدة" أعلى الملف —
+ * راجع تعليقها لتفصيل السبب): `display:flex` هنا بلا تلك القاعدة العامة كان
+ * يُبطِل تأثير hidden تمامًا، فتظهر النافذة كطبقة ثابتة فوق الصفحة بأكملها
+ * طول الوقت لا فقط عند النقر.
+ * ----------------------------------------------------------------------- */
+.modal-backdrop {
+    position: fixed; inset: 0; background: var(--overlay-scrim);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--space-4); z-index: 1000;
+}
+.modal {
+    background: var(--color-surface); border-radius: var(--radius-lg);
+    padding: var(--space-5); width: 100%; max-width: 480px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+}
+.modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--space-4);
+}
+.modal-head h2 { margin: 0; font-size: 1.1rem; }
+.modal-close {
+    border: none; background: transparent; font-size: 1.4rem; line-height: 1;
+    cursor: pointer; color: var(--color-text-muted); padding: 0.2rem 0.5rem;
+}
+.modal-close:hover { color: var(--color-text); }
+.modal .field { margin-bottom: var(--space-3); }
+/* (ملاحظة يحيى: حقلا "من آية"/"إلى آية" يظهران أقرب لمربعات) — .cluster
+   عنصر عام (يُستعمل أيضًا لمجموعات شرائح لا يُراد لها الامتداد، كتبويبات
+   الحلقات)، فلا يصح تعديله هو نفسه؛ هذا السطر مقصور على أي .cluster داخل
+   .modal تحديدًا (حاليًا: صفّ الآيتين في نافذة تسجيل الدرس/المراجعة فقط)
+   ليتقاسم حقلاه العرض بالتساوي كبقية حقول النافذة، بدل الانكماش لعرض
+   المحتوى الافتراضي لـ<input type="number"> الذي ينتج الشكل المربّع. */
+.modal .cluster > .field { flex: 1 1 0; min-width: 0; }
+.modal-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); }
+
+/* -------------------------------------------------------------------------
+ * 24) الأيقونات (v2)
+ *
+ * حلّ محلّ رموز اليونيكود النصّية (✎ ✕ ⚙ × ▾) في كل مكان تظهر فيه كأيقونة
+ * حقيقية ضمن عنصر تفاعلي (زر/رابط) — لا في الرموز الزخرفية المولَّدة بـCSS
+ * (::before/::after) التي تبقى كما هي. كل أيقونة SVG مضمَّنة inline، بخط
+ * رفيع (stroke-width: 2) بلا تعبئة، تَرِث currentColor فتتبع لون النص المحيط
+ * بها تلقائيًا في الوضعين (لا حاجة لأي متغيّر لون خاص بها).
+ * ----------------------------------------------------------------------- */
+.icon {
+    width: 1.2em; height: 1.2em;
+    vertical-align: -0.2em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+.icon-sm { width: 1em; height: 1em; }
+.icon-lg { width: 1.6em; height: 1.6em; }
+
+/* -------------------------------------------------------------------------
+ * 25) هياكل التحميل (Skeleton) — بنية متاحة غير مُفعَّلة (v2)
+ *
+ * لا صفحة حالية في التطبيق تحتاج فعليًا هذه الحالة: كل الصفحات مُصيَّرة من
+ * الخادم (Blade) دفعة واحدة، والاستدعاء الوحيد لـfetch() في كامل الكود
+ * (apiFetch في app.js) هو لطلبات إرسال نماذج (POST/DELETE) لها بالفعل حالة
+ * تحميل خاصة بها وتعمل جيدًا (withButtonLoading، دوّار داخل الزر) — لا لجلب
+ * محتوى صفحة. إقحام skeleton هنا يعني اختلاق فجوة تحميل مصطنعة غير موجودة
+ * فعلًا، وهو تراجع في التجربة لا تحسين. هذه الأصناف مضافة كبنية تحتية جاهزة
+ * فقط لاستخدام مستقبلي حقيقي (مثل صفحة تُحمَّل بياناتها لاحقًا عبر AJAX)،
+ * وغير مُستخدَمة في أي Blade حاليًا. */
+.skeleton {
+    display: inline-block;
+    background: linear-gradient(90deg, var(--color-surface-alt) 25%, var(--color-border) 37%, var(--color-surface-alt) 63%);
+    background-size: 400% 100%;
+    animation: ds-shimmer 1.4s ease infinite;
+    border-radius: var(--radius-sm);
+    color: transparent !important;
+}
+.skeleton-text { height: 1em; width: 100%; border-radius: var(--radius-xs); }
+.skeleton-title { height: 1.5em; width: 60%; border-radius: var(--radius-xs); }
+.skeleton-value { height: 1.9rem; width: 4.5rem; border-radius: var(--radius-xs); }
+.skeleton-avatar { width: 2.5rem; height: 2.5rem; border-radius: var(--radius-full); }
+.skeleton-card { width: 100%; height: 100%; min-height: 5.5rem; border-radius: var(--radius-lg); }
+
+@keyframes ds-shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .skeleton { animation: none; }
+}

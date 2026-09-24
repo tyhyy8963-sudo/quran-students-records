@@ -33,7 +33,8 @@ class PagesRenderTest extends TestCase
     /** @test */
     public function guest_pages_render(): void
     {
-        $this->get('/')->assertOk()->assertSee('كشف المتابعة', false);
+        // (S38 — إعادة تسمية العلامة التجارية إلى "رِواق"، طلب صريح من يحيى)
+        $this->get('/')->assertOk()->assertSee('رِواق', false);
         $this->get('/login')->assertOk()->assertSee('تسجيل الدخول', false);
     }
 

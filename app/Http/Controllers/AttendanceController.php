@@ -11,9 +11,13 @@ use Illuminate\Http\Request;
 class AttendanceController extends Controller
 {
     /**
-     * شاشة التحضير السريعة ليوم واحد (S9) — كل الطلاب (أو حلقة واحدة) في
-     * صفحة واحدة بلا ترقيم صفحات، لأن الفكرة أن يمرّ المعلّم على القائمة
-     * كاملة في جلسة واحدة، لا يقلّب بين صفحات.
+     * سجلّ الحضور والغياب — عرض فقط (S9، أُعيدت لهذا الغرض تحديدًا في تصحيح
+     * S23: كانت هذه الشاشة موضع تجربة موسَّعة أضافت إليها تسجيل الدرس
+     * والمراجعة بالخطأ، بناءً على فهم خاطئ لمكان "الصفحة الرئيسية" التي
+     * يقصدها يحيى — تصحيح صريح منه: "تبويب الحضور والغياب هو فقط لعرض سجلات
+     * الحضور والغياب". القائمة الموحّدة الفعلية (الدرس + المراجعة + الحضور)
+     * انتقلت بالكامل إلى StudentController::index() (/dashboard)، وهذه
+     * الشاشة عادت لعرض سجلّ يوم واحد فقط بلا أي تسجيل أو تعديل من هنا.
      */
     public function index(Request $request)
     {
@@ -21,9 +25,7 @@ class AttendanceController extends Controller
         $circleId = $request->query('circle_id');
 
         // whereDate لا where('date', $date): نفس عطل كاست "date" الموثَّق في
-        // store() أدناه — where() يقارن نص التاريخ الخام فيفشل مطابقة سطر
-        // اليوم نفسه على SQLite (يخزّن وقتًا كاملاً خلف التاريخ)، فتظهر كل
-        // الأزرار كأن لا حضور مسجَّلًا رغم وجوده فعلًا.
+        // store() أدناه.
         $studentsQuery = Student::with([
                 'circle',
                 'attendances' => fn ($q) => $q->whereDate('date', $date),
@@ -39,8 +41,8 @@ class AttendanceController extends Controller
 
         return view('attendance.index', [
             'students' => $students,
-            'circles' => $circles,
-            'date' => $date,
+            'circles'  => $circles,
+            'date'     => $date,
             'circleId' => $circleId,
         ]);
     }
@@ -58,6 +60,9 @@ class AttendanceController extends Controller
         // فيفشل البحث ويحاول إنشاء سطر مكرّر يصطدم بقيد unique. whereDate()
         // يقارن التاريخ الفعلي بصرف النظر عن أي جزء وقت عالق، فيعمل على
         // المحرّكين معًا بلا اعتماد على تسامح MySQL وحده.
+        //
+        // هذا المسار يبقى بلا تغيير رغم انتقال شاشة العرض (S23): أزرار تسجيل
+        // الحضور في اللوحة الرئيسية (/dashboard) ترسل إلى هذا المسار نفسه.
         $saved = collect($validated['entries'])->map(function (array $entry) use ($date) {
             $attendance = Attendance::where('student_id', $entry['student_id'])
                 ->whereDate('date', $date)

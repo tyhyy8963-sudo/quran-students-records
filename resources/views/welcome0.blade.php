@@ -1,11 +1,12 @@
 @extends('layouts.guest')
 
-@section('title', 'كشف المتابعة')
+@section('title', 'رِواق')
 
 @section('content')
     <div class="hero">
-        <p class="emoji">📖</p>
-        <h1>مرحبًا بك في كشف المتابعة</h1>
+        <img src="{{ asset('images/logo-full-light.png') }}" alt="رِواق" class="auth-logo is-light" style="max-width: 260px;">
+        <img src="{{ asset('images/logo-full-dark.png') }}" alt="رِواق" class="auth-logo is-dark" style="max-width: 260px;">
+        <h1>مرحبًا بك في رِواق</h1>
         <p>حيث كل خطوة في حفظ طلابك للقرآن تُسجَّل وتُتابَع بسهولة، من مكان واحد.</p>
 
         <div class="actions">

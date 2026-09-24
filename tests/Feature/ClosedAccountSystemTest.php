@@ -218,6 +218,88 @@ class ClosedAccountSystemTest extends TestCase
     }
 
     /** @test */
+    public function an_admin_can_set_a_chosen_password_instead_of_a_random_one_on_reset(): void
+    {
+        // الواجهة كانت تعرض "إعادة تعيين" بلا حقل إدخال فتسقط دائمًا على
+        // التوليد التلقائي، رغم أن الخادم يقبل password منذ البداية (طلب
+        // صاحب المنظومة تخصيص كلمة المرور بنفسه لا انتظار توليد عشوائي دائمًا).
+        $teacher = $this->teacher();
+
+        $this->actingAs($this->admin())
+            ->patch("/admin/teachers/{$teacher->id}/password", ['password' => 'my-chosen-pass'])
+            ->assertSessionHas('issued_credentials');
+
+        $this->assertSame('my-chosen-pass', session('issued_credentials')['password']);
+        $this->assertFalse(Hash::check('teacher-pass', $teacher->fresh()->password));
+        $this->assertTrue(Hash::check('my-chosen-pass', $teacher->fresh()->password));
+
+        $this->post('/login', ['username' => $teacher->username, 'password' => 'my-chosen-pass'])
+            ->assertRedirect(route('dashboard'));
+    }
+
+    /** @test */
+    public function a_chosen_reset_password_shorter_than_six_characters_is_rejected(): void
+    {
+        $teacher = $this->teacher();
+
+        $this->actingAs($this->admin())
+            ->patch("/admin/teachers/{$teacher->id}/password", ['password' => 'abc'])
+            ->assertSessionHasErrors('password');
+
+        // كلمة المرور القديمة تبقى سارية — الطلب المرفوض لم يغيّر شيئًا.
+        $this->assertTrue(Hash::check('teacher-pass', $teacher->fresh()->password));
+    }
+
+    /**
+     * تعديل اسم المستخدم من لوحة الأدمن (طلب صريح من يحيى: كان التعديل
+     * المتاح لكل معلّم يقتصر على كلمة المرور فقط، بلا أي طريقة لتغيير اسم
+     * المستخدم بعد إنشاء الحساب).
+     */
+    /** @test */
+    public function an_admin_updates_a_teachers_username_and_they_log_in_with_the_new_one(): void
+    {
+        $teacher = $this->teacher('old_name');
+
+        $this->actingAs($this->admin())
+            ->patch("/admin/teachers/{$teacher->id}/username", ['username' => 'new_name'])
+            ->assertSessionHas('success');
+
+        $this->assertSame('new_name', $teacher->fresh()->username);
+
+        $this->post('/login', ['username' => 'new_name', 'password' => 'teacher-pass'])
+            ->assertRedirect(route('dashboard'));
+        $this->post('/logout');
+
+        // الاسم القديم لم يعد يعمل — نفس رسالة "بيانات خاطئة" العامة، لا خطأ تحقّق.
+        $this->post('/login', ['username' => 'old_name', 'password' => 'teacher-pass'])
+            ->assertSessionHas('error');
+        $this->assertGuest();
+    }
+
+    /** @test */
+    public function a_teachers_username_cannot_be_changed_to_one_already_taken_or_an_invalid_shape(): void
+    {
+        $this->teacher('taken_name');
+        $teacher = $this->teacher('mine_name');
+        $admin = $this->admin();
+
+        $this->actingAs($admin)
+            ->patch("/admin/teachers/{$teacher->id}/username", ['username' => 'taken_name'])
+            ->assertSessionHasErrors('username');
+
+        $this->actingAs($admin)
+            ->patch("/admin/teachers/{$teacher->id}/username", ['username' => 'اسم عربي'])
+            ->assertSessionHasErrors('username');
+
+        $this->actingAs($admin)
+            ->patch("/admin/teachers/{$teacher->id}/username", ['username' => 'ab'])
+            ->assertSessionHasErrors('username');
+
+        // كل المحاولات المرفوضة أعلاه لم تغيّر شيئًا.
+        $this->assertSame('mine_name', $teacher->fresh()->username);
+    }
+
+    /** @test */
     public function an_admin_can_deactivate_and_reactivate_a_teacher(): void
     {
         $teacher = $this->teacher();
@@ -267,6 +349,7 @@ class ClosedAccountSystemTest extends TestCase
         ]);
 
         $this->actingAs($admin)->patch("/admin/teachers/{$otherAdmin->id}/password")->assertForbidden();
+        $this->actingAs($admin)->patch("/admin/teachers/{$otherAdmin->id}/username", ['username' => 'x'])->assertForbidden();
         $this->actingAs($admin)->patch("/admin/teachers/{$otherAdmin->id}/active")->assertForbidden();
         $this->actingAs($admin)->delete("/admin/teachers/{$otherAdmin->id}")->assertForbidden();
     }

@@ -13,6 +13,9 @@ use Tests\TestCase;
 /**
  * حساب نسبة حفظ متن (S15) — نفس منطق MemorizationProgress لكن على وحدة
  * "بيت" واحدة (لا مجموع خطوات على عدّة سور).
+ *
+ * (S24 — بطلب صريح من يحيى): اختبار "أرضية المتن" اليدوية (كان هنا) حُذف —
+ * الأرضية أُلغيت نهائيًا، راجع تعليق PoemProgress::class للتفصيل الكامل.
  */
 class PoemProgressTest extends TestCase
 {
@@ -36,14 +39,14 @@ class PoemProgressTest extends TestCase
         $this->progress = app(PoemProgress::class);
     }
 
-    private function log(int $to, ?int $from = null, string $type = 'حفظ'): void
+    private function log(int $to, ?int $from = null, string $type = 'حفظ', ?string $loggedAt = null): void
     {
         $this->student->poemRecitationLogs()->create([
             'poem_id'   => $this->poem->id,
             'from_bayt' => $from,
             'to_bayt'   => $to,
             'type'      => $type,
-            'logged_at' => now()->toDateString(),
+            'logged_at' => $loggedAt ?? now()->toDateString(),
         ]);
 
         $this->progress->forget($this->student, $this->poem);
@@ -96,5 +99,30 @@ class PoemProgressTest extends TestCase
 
         $this->assertSame(61, $this->progress->coverage($this->student, $this->poem));
         $this->assertSame(100.0, $this->progress->percentage($this->student, $this->poem));
+    }
+
+    /** @test */
+    public function timeline_reports_the_cumulative_percentage_as_of_each_logged_date(): void
+    {
+        $this->log(20, null, 'حفظ', '2026-01-01');
+        $this->log(40, 21, 'حفظ', '2026-01-08');
+
+        $timeline = $this->progress->timeline($this->student, $this->poem);
+
+        $this->assertSame(2, $timeline->count());
+        $this->assertSame(['date' => '2026-01-01', 'percent' => round(20 / 61 * 100, 1)], $timeline[0]);
+        $this->assertSame(['date' => '2026-01-08', 'percent' => round(40 / 61 * 100, 1)], $timeline[1]);
+    }
+
+    /** @test */
+    public function multiple_logs_on_the_same_day_keep_only_that_days_final_percentage(): void
+    {
+        $this->log(20, 1, 'حفظ', '2026-02-01');
+        $this->log(40, 21, 'حفظ', '2026-02-01');
+
+        $timeline = $this->progress->timeline($this->student, $this->poem);
+
+        $this->assertSame(1, $timeline->count());
+        $this->assertSame(['date' => '2026-02-01', 'percent' => round(40 / 61 * 100, 1)], $timeline[0]);
     }
 }

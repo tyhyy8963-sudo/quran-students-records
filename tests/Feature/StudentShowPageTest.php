@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Circle;
 use App\Models\Student;
 use App\Models\Surah;
 use App\Models\User;
@@ -64,5 +65,32 @@ class StudentShowPageTest extends TestCase
         $this->actingAs($intruder)
             ->get("/dashboard/{$student->student_id}")
             ->assertNotFound();
+    }
+
+    /**
+     * (طلب صريح من يحيى): زرّا "تعديل" (اسم الطالب + الحلقة معًا) و"حذف
+     * الطالب" انتقلا إلى هنا من صفّ اللوحة الرئيسية — راجع تعليقَي الزرّين
+     * في dashboard.blade.php من التصحيح الثالث. تحقّق فقط من ظهور الزرّين
+     * وقائمة حلقات المعلّم نفسه في نموذج التعديل — السلوك الفعلي للحفظ
+     * والحذف مُختبَر مسبقًا في StudentUpdateTest وStudentSprint4Test عبر
+     * نفس نقطتَي النهاية (PATCH/DELETE) اللتين يستهلكهما هذا الزرّان فقط.
+     */
+    /** @test */
+    public function the_show_page_offers_an_edit_and_delete_button_with_the_teachers_own_circles(): void
+    {
+        $teacher = $this->makeTeacher();
+        $otherTeacher = $this->makeTeacher('other');
+        $student = Student::create(['student_name' => 'يوسف', 'teacher_id' => $teacher->id]);
+        Circle::create(['name' => 'الفرقان', 'teacher_id' => $teacher->id]);
+        Circle::create(['name' => 'حلقة ليست لي', 'teacher_id' => $otherTeacher->id]);
+
+        $this->actingAs($teacher)
+            ->get("/dashboard/{$student->student_id}")
+            ->assertOk()
+            ->assertSee('id="editStudentBtn"', false)
+            ->assertSee('id="deleteStudentBtn"', false)
+            ->assertSee('id="editStudentForm"', false)
+            ->assertSee('الفرقان')
+            ->assertDontSee('حلقة ليست لي');
     }
 }

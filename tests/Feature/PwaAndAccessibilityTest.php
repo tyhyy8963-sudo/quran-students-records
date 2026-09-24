@@ -78,13 +78,33 @@ class PwaAndAccessibilityTest extends TestCase
         }
     }
 
+    /**
+     * انحدار وصولية أصلي: column-label مخفي بـ display:none على الشاشة
+     * الواسعة (@media max-width:760px فقط يُظهره)، فلا يُقرأ اسمًا لقارئ
+     * الشاشة هناك — القوائم المنسدلة (خلافًا لحقل الاسم النصّي الذي يستفيد
+     * من placeholder كاسم بديل) لا تملك أي اسم بديل بلا aria-label.
+     *
+     * (تصحيح S23): قائمة "حالة" (عضوية الطالب) أُزيلت من صفّ اللوحة الرئيسية.
+     * (تصحيح بصري ثالث، صور مرجعية من يحيى): قائمة "الحلقة" المنسدلة أُزيلت
+     * هي الأخرى بالكامل من صفّ *العرض* (لم تظهر في أيّ من الصور)، فلم يعد
+     * على صفّ الطالب المعروض أيّ عنصر <select> إطلاقًا — عناصره الآن بطاقات
+     * (chips) ذات نصّ مرئي كامل تكفي وحدها اسمًا مقروءًا (لا حاجة لـ
+     * aria-label من الأساس). العطل الأصلي لم يعد له موضوع؛ الاختبار أُبقي
+     * كحارس انحدار معاكس.
+     *
+     * ملاحظة تقنية (بعد أول تشغيل فعلي بعد التصحيح الثالث): التوكيد لا يمكن
+     * أن يكون `assertDontSee('class="input circle"')` عامًّا على كل الصفحة —
+     * صفّ "إضافة طالب" الجديد (`.student-row.is-new`, نموذج إدخال منفصل تمامًا
+     * لم يتأثّر بهذا التصحيح) لا يزال يحتوي `<select class="input circle">`
+     * فعليًا، وقالبه مُضمَّن كسلسلة نصّية داخل <script> في نفس الصفحة (دالة
+     * buildRow في JS)، فيطابقه أيّ توكيد نصّي عام خطأً. التوكيد الصحيح
+     * يتحقّق تحديدًا من غياب aria-label الديناميكي الذي كان يُميّز قائمة
+     * حلقة *كل طالب موجود* باسمه (الصيغة الأصلية قبل هذا التصحيح) — الصيغة
+     * الثابتة العامة لقالب الصفّ الجديد ("حلقة الطالب الجديد") لا تُطابقها.
+     */
     /** @test */
-    public function the_dashboard_row_selects_have_accessible_names_even_though_their_visual_label_is_hidden_on_desktop(): void
+    public function the_dashboard_row_no_longer_has_a_circle_dropdown_needing_an_accessible_name(): void
     {
-        // انحدار وصولية: column-label مخفي بـ display:none على الشاشة
-        // الواسعة (@media max-width:760px فقط يُظهره)، فلا يُقرأ اسمًا لقارئ
-        // الشاشة هناك — القوائم المنسدلة (خلافًا لحقل الاسم النصّي الذي
-        // يستفيد من placeholder كاسم بديل) لا تملك أي اسم بديل بلا aria-label.
         $teacher = User::create([
             'name' => 'الأستاذ سلطان', 'username' => 'sultan_pwa', 'password' => Hash::make('secret123'),
             'mosque' => 'جامع', 'classroom' => 'حلقة',
@@ -94,8 +114,7 @@ class PwaAndAccessibilityTest extends TestCase
         $this->actingAs($teacher)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee("aria-label=\"حلقة {$student->student_name}\"", false)
-            ->assertSee("aria-label=\"حالة {$student->student_name}\"", false);
+            ->assertDontSee("aria-label=\"حلقة {$student->student_name}\"", false);
     }
 
     /** @test */

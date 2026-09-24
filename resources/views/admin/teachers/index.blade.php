@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'حسابات المعلّمين - كشف المتابعة')
+@section('title', 'حسابات المعلّمين - رِواق')
 
 @section('content')
     <div class="page-title-row">
@@ -61,7 +61,6 @@
                 <span>الطلاب</span>
                 <span>آخر دخول</span>
                 <span>الحالة</span>
-                <span></span>
             </div>
 
             <div class="accounts-table">
@@ -102,12 +101,49 @@
                         </div>
 
                         <div class="account-cell account-actions">
+                            {{-- عرض سجلّات المعلّم الكاملة (S20) — قراءة فقط، منفصل عن
+                                 أزرار إدارة الحساب التالية. --}}
+                            <a href="{{ route('admin.teachers.report', $teacher) }}" class="btn btn-sm btn-secondary">عرض السجلّ</a>
+
+                            {{-- تعديل اسم المستخدم (طلب صريح من يحيى: "أبغى التعديل يشمل
+                                 اسم المستخدم كمان" — كان التعديل من هذه الشاشة يقتصر على
+                                 كلمة المرور فقط). نفس نمط "تخصيص كلمة مرور" أدناه: تفاصيل
+                                 قابلة للطيّ بدل نموذج ظاهر دومًا لكل صفّ. --}}
+                            <details class="inline-form">
+                                <summary class="btn btn-sm btn-ghost">تعديل اسم المستخدم</summary>
+                                <form method="POST" action="{{ route('admin.teachers.username', $teacher) }}" class="js-confirm inline-password-form"
+                                      data-confirm="تغيير اسم مستخدم {{ $teacher->name }}؟ سيحتاج استعمال الاسم الجديد من دخوله القادم.">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="text" class="input" name="username" required minlength="3" maxlength="50"
+                                           pattern="[a-zA-Z0-9_]+" value="{{ $teacher->username }}"
+                                           placeholder="اسم المستخدم الجديد" aria-label="اسم مستخدم جديد لـ{{ $teacher->name }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">حفظ</button>
+                                </form>
+                            </details>
+
                             <form method="POST" action="{{ route('admin.teachers.password', $teacher) }}" class="inline-form js-confirm"
-                                  data-confirm="إعادة تعيين كلمة مرور {{ $teacher->name }}؟ ستتوقّف كلمته الحالية فورًا.">
+                                  data-confirm="توليد كلمة مرور عشوائية جديدة لـ{{ $teacher->name }}؟ ستتوقّف كلمته الحالية فورًا.">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="btn btn-sm btn-secondary">كلمة مرور جديدة</button>
+                                <button type="submit" class="btn btn-sm btn-secondary">توليد تلقائي</button>
                             </form>
+
+                            {{-- تخصيص كلمة المرور يدويًا (بعد طلب صاحب المنظومة) — الخادم
+                                 يقبل حقل password منذ البداية، الفجوة كانت في الواجهة فقط:
+                                 لا حقل إدخال كان معروضًا أصلًا، فيسقط دائمًا على التوليد
+                                 التلقائي. --}}
+                            <details class="inline-form">
+                                <summary class="btn btn-sm btn-ghost">تخصيص كلمة مرور</summary>
+                                <form method="POST" action="{{ route('admin.teachers.password', $teacher) }}" class="js-confirm inline-password-form"
+                                      data-confirm="تعيين كلمة المرور المكتوبة لـ{{ $teacher->name }}؟ ستتوقّف كلمته الحالية فورًا.">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="text" class="input" name="password" required minlength="6" maxlength="100"
+                                           placeholder="كلمة المرور الجديدة (٦ رموز فأكثر)" aria-label="كلمة مرور مخصّصة لـ{{ $teacher->name }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">تعيين</button>
+                                </form>
+                            </details>
 
                             <form method="POST" action="{{ route('admin.teachers.active', $teacher) }}" class="inline-form js-confirm"
                                   data-confirm="{{ $teacher->is_active ? 'تعطيل حساب '.$teacher->name.'؟ لن يتمكّن من الدخول، وتبقى سجلّات طلابه كما هي.' : 'إعادة تفعيل حساب '.$teacher->name.'؟' }}">

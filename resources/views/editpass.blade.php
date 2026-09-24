@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'تغيير كلمة المرور - كشف المتابعة')
+@section('title', 'تغيير كلمة المرور - رِواق')
 
 @section('content')
     <div class="card card-pad auth-card" style="margin-inline: auto;">
         <div class="cluster" style="justify-content: space-between;">
             <h1 class="mt-0">تغيير كلمة المرور</h1>
-            <a href="{{ route('admin.teachers.index') }}" class="btn btn-ghost btn-icon" aria-label="رجوع إلى لوحة الحسابات">✕</a>
+            <a href="{{ route('admin.teachers.index') }}" class="btn btn-ghost btn-icon" aria-label="رجوع إلى لوحة الحسابات"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></a>
         </div>
 
         @if ($errors->any())

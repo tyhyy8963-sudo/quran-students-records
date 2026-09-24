@@ -6,6 +6,7 @@ use App\Models\Quarter;
 use App\Models\RecitationLog;
 use App\Models\Student;
 use App\Models\Surah;
+use App\Support\Concerns\MergesAyahRanges;
 use Illuminate\Support\Collection;
 
 /**
@@ -35,9 +36,16 @@ use Illuminate\Support\Collection;
  * بخلاف الحفظ والمتون، لا "آخر ربع رُوجع قبل الانضمام" مفهوم واحد واضح (المراجعة
  * نشاط متكرّر لا تسلسل صاعد له نقطة توقّف واحدة) — الرقم من السجلّات المسجَّلة
  * فعليًا فقط، بلا تلفيق.
+ *
+ * ═══ منطق الدمج/التقاطع مشترك ═══
+ * راجع App\Support\Concerns\MergesAyahRanges — نفس الخوارزمية يستعملها الآن
+ * MemorizationProgress أيضًا (منذ تحويل نسبة الحفظ للأرباع)، فبقيت نسخة واحدة
+ * مُختبَرة لا نسختان قد تنحرفان عن بعضهما لاحقًا.
  */
 class ReviewProgress
 {
+    use MergesAyahRanges;
+
     /** @var Collection<int, Surah>|null */
     private ?Collection $surahCache = null;
 
@@ -67,25 +75,38 @@ class ReviewProgress
             ->where('student_id', $studentId)
             ->where('type', 'مراجعة')
             ->whereNotNull('surah_id')
-            ->get(['surah_id', 'from_ayah', 'to_ayah']);
+            ->get(['surah_id', 'to_surah_id', 'from_ayah', 'to_ayah']);
 
         $globalRanges = [];
 
         foreach ($logs as $log) {
-            $start = $this->surahStarts()[$log->surah_id] ?? null;
+            $fromStart = $this->surahStarts()[$log->surah_id] ?? null;
 
-            if ($start === null) {
+            if ($fromStart === null) {
+                continue;
+            }
+
+            // مراجعة عابرة لعدّة سور (S16): to_surah_id قد يختلف عن surah_id،
+            // فتُحسَب البداية والنهاية كلٌّ من بدايتها المطلقة الخاصة بها لا
+            // بمقارنة رقمي آية على محورين مختلفين.
+            $toSurahId = $log->to_surah_id ?? $log->surah_id;
+            $toStart = $this->surahStarts()[$toSurahId] ?? null;
+
+            if ($toStart === null) {
                 continue;
             }
 
             $from = max(1, (int) ($log->from_ayah ?: 1));
             $to = (int) $log->to_ayah;
 
-            if ($to < $from) {
+            $globalFrom = $fromStart + $from - 1;
+            $globalTo = $toStart + $to - 1;
+
+            if ($globalTo < $globalFrom) {
                 continue;
             }
 
-            $globalRanges[] = [$start + $from - 1, $start + $to - 1];
+            $globalRanges[] = [$globalFrom, $globalTo];
         }
 
         $merged = $this->mergeRanges($globalRanges);
@@ -118,63 +139,205 @@ class ReviewProgress
         return round(min($steps / Quarter::COUNT * 100, 100), 1);
     }
 
+    /**
+     * عدد الأرباع المكتملة بالكامل من 240 — معلومة عرضية فوق النسبة نفسها
+     * ("راجع 12 من 240 ربعًا" أوضح للمعلّم من رقم مئوي مجرّد وحده)، تلبيةً
+     * لطلب عرض "عدد الأرباع/الأحزاب التي تمّت مراجعتها". لا تدخل حساب
+     * percentage() (تلك تُحتسِب الأرباع الجزئية بنسبتها أيضًا)، عرض فقط.
+     */
+    public function quartersFullyReviewed(Student $student): int
+    {
+        $coverage = $this->coverage($student);
+        $count = 0;
+
+        foreach ($this->quarters() as $quarter) {
+            $length = $quarter->range[1] - $quarter->range[0] + 1;
+
+            if ($length > 0 && ($coverage[$quarter->quarter_number] ?? 0) >= $length) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     public function forget(Student $student): void
     {
         unset($this->coverageCache[(int) $student->student_id]);
     }
 
     /**
-     * @param  array<int, array{0: int, 1: int}>  $ranges
-     * @return array<int, array{0: int, 1: int}> مُدمَجة ومُرتَّبة
+     * نشاط المراجعة الشهري (S16، استُبدل بها منحنى تراكمي سابق بعد ملاحظة
+     * صاحب المنظومة أنه لا يعكس طبيعة المراجعة الحقيقية): عدد الأرباع التي
+     * مسّتها أي مراجعة خلال كل شهر من آخر $months أشهر (بما فيها الشهر
+     * الحالي) — أعمدة شهرية للمقارنة، لا نسبة تراكمية مستمرّة.
+     *
+     * ═══ لماذا أعمدة شهرية لا منحنى تراكمي ═══
+     * المراجعة نشاط متكرّر بطبيعته: نفس الربع قد يُراجَع عدّة مرّات عبر عدّة
+     * أشهر، فرسمها كنسبة تراكمية (كما في منحنى الحفظ) يخلط "كم أُنجِز حتى
+     * الآن إجمالًا" بـ"كم عمل فعليًا هذا الشهر تحديدًا" — والثاني هو ما يريد
+     * المعلّم مقارنته شهرًا بشهر، لا الأول.
+     *
+     * ═══ "مسّته" لا "اكتمل بالكامل" ═══
+     * ربع يُحسَب لشهر لو كان له أي تقاطع فعلي مع مراجعات ذلك الشهر، ولو
+     * جزئيًا — معيار أخفّ عمدًا من quartersFullyReviewed() (ذاك عن الإتقان،
+     * هذا عن حجم النشاط الشهري).
+     *
+     * @return Collection<int, array{month: string, label: string, quarters: int}>
      */
-    private function mergeRanges(array $ranges): array
+    public function monthlyActivity(Student $student, int $months = 6): Collection
     {
-        if (empty($ranges)) {
-            return [];
-        }
+        $logs = RecitationLog::query()
+            ->where('student_id', (int) $student->student_id)
+            ->where('type', 'مراجعة')
+            ->whereNotNull('surah_id')
+            ->whereNotNull('logged_at')
+            ->get(['surah_id', 'to_surah_id', 'from_ayah', 'to_ayah', 'logged_at']);
 
-        usort($ranges, fn ($a, $b) => $a[0] <=> $b[0]);
+        $starts = $this->surahStarts();
+        $rangesByMonth = [];
 
-        $merged = [];
-        [$currentStart, $currentEnd] = $ranges[0];
+        foreach ($logs as $log) {
+            $fromStart = $starts[$log->surah_id] ?? null;
 
-        for ($i = 1; $i < count($ranges); $i++) {
-            [$start, $end] = $ranges[$i];
-
-            if ($start <= $currentEnd + 1) {
-                $currentEnd = max($currentEnd, $end);
+            if ($fromStart === null) {
                 continue;
             }
 
-            $merged[] = [$currentStart, $currentEnd];
-            [$currentStart, $currentEnd] = [$start, $end];
+            $toSurahId = $log->to_surah_id ?? $log->surah_id;
+            $toStart = $starts[$toSurahId] ?? null;
+
+            if ($toStart === null) {
+                continue;
+            }
+
+            $from = max(1, (int) ($log->from_ayah ?: 1));
+            $to = (int) $log->to_ayah;
+
+            $globalFrom = $fromStart + $from - 1;
+            $globalTo = $toStart + $to - 1;
+
+            if ($globalTo < $globalFrom) {
+                continue;
+            }
+
+            $monthKey = $log->logged_at->format('Y-m');
+            $rangesByMonth[$monthKey][] = [$globalFrom, $globalTo];
         }
 
-        $merged[] = [$currentStart, $currentEnd];
+        $quarters = $this->quarters();
+        $result = collect();
 
-        return $merged;
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $monthKey = $month->format('Y-m');
+            $merged = $this->mergeRanges($rangesByMonth[$monthKey] ?? []);
+
+            $count = 0;
+            foreach ($quarters as $quarter) {
+                if ($this->intersectionLength($merged, $quarter->range) > 0) {
+                    $count++;
+                }
+            }
+
+            $result->push([
+                'month'    => $monthKey,
+                'label'    => $month->translatedFormat('F Y'),
+                'quarters' => $count,
+            ]);
+        }
+
+        return $result;
     }
 
     /**
-     * طول تقاطع مديات مُدمَجة مع مدى واحد (مدى الربع).
+     * منحنى تقدّم المراجعة: نسبة تراكمية عند كل تاريخ سُجِّلت فيه مراجعة جديدة
+     * (S23.5 — إعادة التصميم بنمط هرماس؛ طلب صريح من يحيى إضافة منحنى مراجعة
+     * موازٍ لمنحنى الحفظ الموجود أصلًا في MemorizationProgress::timeline()،
+     * ليظهرا جنبًا لجنب في شبكة "التحليلات والإحصائيات" — لم يكن هذا المنحنى
+     * موجودًا من قبل، فقط أعمدة monthlyActivity() الشهرية أعلاه، وهي تبقى
+     * كما هي بلا أي تغيير لأنها تجيب سؤالًا مختلفًا: "كم رُوجع هذا الشهر
+     * تحديدًا" لا "أين وصلت النسبة الإجمالية عبر الزمن").
      *
-     * @param  array<int, array{0: int, 1: int}>  $mergedRanges
-     * @param  array{0: int, 1: int}  $target
+     * نفس مبدأ منحنى الحفظ حرفيًا (راجع تعليق MemorizationProgress::timeline()):
+     * إعادة تشغيل السجلّ زمنيًا، وعند كل سطر تُحسَب نسبة الأرباع من كل مدى
+     * مراجعة مُدمَج حتى تلك اللحظة — بنفس صيغة percentage()/coverage() أعلاه
+     * تمامًا (تقاطع كل ربع مع المدى المُدمَج ÷ طول الربع)، لا صيغة موازية قد
+     * تنحرف عنها لاحقًا.
+     *
+     * @return Collection<int, array{date: string, percent: float}>
      */
-    private function intersectionLength(array $mergedRanges, array $target): int
+    public function timeline(Student $student): Collection
     {
-        $total = 0;
+        $logs = $student->recitationLogs()
+            ->reorder('logged_at')
+            ->orderBy('id')
+            ->where('type', 'مراجعة')
+            ->whereNotNull('surah_id')
+            ->get(['surah_id', 'to_surah_id', 'from_ayah', 'to_ayah', 'logged_at']);
 
-        foreach ($mergedRanges as [$start, $end]) {
-            $overlapStart = max($start, $target[0]);
-            $overlapEnd = min($end, $target[1]);
+        $starts = $this->surahStarts();
+        $globalRanges = [];
+        $points = [];
 
-            if ($overlapEnd >= $overlapStart) {
-                $total += $overlapEnd - $overlapStart + 1;
+        foreach ($logs as $log) {
+            $fromStart = $starts[$log->surah_id] ?? null;
+
+            if ($fromStart === null) {
+                continue;
             }
+
+            // مراجعة عابرة لعدّة سور (S16) — نفس منطق coverage() أعلاه بالضبط.
+            $toSurahId = $log->to_surah_id ?? $log->surah_id;
+            $toStart = $starts[$toSurahId] ?? null;
+
+            if ($toStart === null) {
+                continue;
+            }
+
+            $from = max(1, (int) ($log->from_ayah ?: 1));
+            $to = (int) $log->to_ayah;
+
+            $globalFrom = $fromStart + $from - 1;
+            $globalTo = $toStart + $to - 1;
+
+            if ($globalTo >= $globalFrom) {
+                $globalRanges[] = [$globalFrom, $globalTo];
+            }
+
+            $merged = $this->mergeRanges($globalRanges);
+
+            // يوم واحد قد يحمل عدّة أسطر — تُبقى آخر نسبة في اليوم لا كل سطر،
+            // فالمنحنى يوميّ لا لكل إدخال (نفس مبدأ منحنى الحفظ).
+            $points[optional($log->logged_at)->toDateString()] = $this->percentageFromMergedRanges($merged);
         }
 
-        return $total;
+        return collect($points)
+            ->map(fn (float $percent, string $date) => ['date' => $date, 'percent' => $percent])
+            ->values();
+    }
+
+    /**
+     * نسبة المراجعة من مدى مطلق مُدمَج جاهز — استُخرجت من percentage() لتُستعمَل
+     * أيضًا في timeline() بلا تكرار نفس حلقة الأرباع مرّتين بصيغتين مختلفتين.
+     *
+     * @param  array<int, array{0: int, 1: int}>  $mergedRanges
+     */
+    private function percentageFromMergedRanges(array $mergedRanges): float
+    {
+        $steps = 0.0;
+
+        foreach ($this->quarters() as $quarter) {
+            $length = $quarter->range[1] - $quarter->range[0] + 1;
+
+            if ($length < 1) {
+                continue;
+            }
+
+            $steps += min(1.0, $this->intersectionLength($mergedRanges, $quarter->range) / $length);
+        }
+
+        return round(min($steps / Quarter::COUNT * 100, 100), 1);
     }
 
     /**

@@ -23,7 +23,7 @@ class StorePoemRecitationLogRequest extends FormRequest
             'from_bayt' => ['nullable', 'integer', 'min:1'],
             'to_bayt'   => ['required', 'integer', 'min:1'],
             'type'      => ['required', 'string', Rule::in(array_keys(RecitationLog::TYPES))],
-            'grade'     => ['nullable', 'string', Rule::in(array_keys(RecitationLog::GRADES))],
+            'status'    => ['nullable', 'string', Rule::in(array_keys(RecitationLog::STATUSES))],
             'notes'     => ['nullable', 'string', 'max:1000'],
             'logged_at' => ['nullable', 'date', 'before_or_equal:today'],
         ];
@@ -38,7 +38,7 @@ class StorePoemRecitationLogRequest extends FormRequest
             'to_bayt.min'        => 'رقم البيت يجب أن يكون 1 أو أكثر.',
             'from_bayt.min'      => 'رقم البيت يجب أن يكون 1 أو أكثر.',
             'type.in'            => 'نوع السجلّ غير صحيح.',
-            'grade.in'           => 'التقييم غير صحيح.',
+            'status.in'          => 'حالة الحفظ غير صحيحة.',
             'notes.max'          => 'الملاحظة طويلة جدًا.',
             'logged_at.before_or_equal' => 'لا يمكن تسجيل تاريخ في المستقبل.',
         ];

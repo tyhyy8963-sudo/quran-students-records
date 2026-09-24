@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'المتون - كشف المتابعة')
+@section('title', 'المتون - رِواق')
 
 @section('content')
     <div class="page-title-row">
