@@ -55,11 +55,15 @@ class PoemProgressTest extends TestCase
     /** @test */
     public function the_five_fixed_poems_exist_with_the_documented_bayt_counts(): void
     {
+        // القيم أدناه محدَّثة بعد تصحيحين مؤكَّدين من فرز الأبواب الفعلي (S39):
+        // الجزرية 107→109 (migration 2026_09_25_000001)، وطيبة النشر 1014→1015
+        // (migration 2026_09_25_000002، بعد إعادة بناء أبوابها من المتن الأصلي
+        // الكامل الذي أرسله يحيى وتأكّد أن نهايتها الحقيقية 1015 لا 1014).
         $this->assertSame(61, Poem::where('name', 'تحفة الأطفال')->firstOrFail()->bayt_count);
-        $this->assertSame(107, Poem::where('name', 'الجزرية')->firstOrFail()->bayt_count);
+        $this->assertSame(109, Poem::where('name', 'الجزرية')->firstOrFail()->bayt_count);
         $this->assertSame(1173, Poem::where('name', 'الشاطبية')->firstOrFail()->bayt_count);
         $this->assertSame(241, Poem::where('name', 'الدرة المضية')->firstOrFail()->bayt_count);
-        $this->assertSame(1014, Poem::where('name', 'طيبة النشر')->firstOrFail()->bayt_count);
+        $this->assertSame(1015, Poem::where('name', 'طيبة النشر')->firstOrFail()->bayt_count);
     }
 
     /** @test */
@@ -110,8 +114,10 @@ class PoemProgressTest extends TestCase
         $timeline = $this->progress->timeline($this->student, $this->poem);
 
         $this->assertSame(2, $timeline->count());
-        $this->assertSame(['date' => '2026-01-01', 'percent' => round(20 / 61 * 100, 1)], $timeline[0]);
-        $this->assertSame(['date' => '2026-01-08', 'percent' => round(40 / 61 * 100, 1)], $timeline[1]);
+        // (S25 — بطلب يحيى: تنسيق تاريخ عربي مقروء بدل "Y-m-d" في عرض
+        // المنحنى) — timeline() تُضيف الآن حقل label، فالتوقّع هنا يعكسه.
+        $this->assertSame(['date' => '2026-01-01', 'label' => '1 يناير 2026', 'percent' => round(20 / 61 * 100, 1)], $timeline[0]);
+        $this->assertSame(['date' => '2026-01-08', 'label' => '8 يناير 2026', 'percent' => round(40 / 61 * 100, 1)], $timeline[1]);
     }
 
     /** @test */
@@ -123,6 +129,6 @@ class PoemProgressTest extends TestCase
         $timeline = $this->progress->timeline($this->student, $this->poem);
 
         $this->assertSame(1, $timeline->count());
-        $this->assertSame(['date' => '2026-02-01', 'percent' => round(40 / 61 * 100, 1)], $timeline[0]);
+        $this->assertSame(['date' => '2026-02-01', 'label' => '1 فبراير 2026', 'percent' => round(40 / 61 * 100, 1)], $timeline[0]);
     }
 }

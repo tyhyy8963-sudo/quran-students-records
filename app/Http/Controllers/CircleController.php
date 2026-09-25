@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCircleRequest;
 use App\Models\Circle;
+use App\Models\Student;
 
 /**
  * إدارة الحلقات (S6) — كانت قائمة بسيطة داخل نافذة منبثقة في لوحة القرآن؛
@@ -18,7 +19,11 @@ class CircleController extends Controller
     {
         $circles = Circle::orderBy('name')->get();
 
-        return view('circles.index', ['circles' => $circles]);
+        // شارة عدد الطلاب في الشريط العلوي (طلب صريح من يحيى) — نفس استعلام
+        // StudentController::index() حرفيًا.
+        $studentsCount = Student::count();
+
+        return view('circles.index', ['circles' => $circles, 'studentsCount' => $studentsCount]);
     }
 
     public function store(StoreCircleRequest $request)

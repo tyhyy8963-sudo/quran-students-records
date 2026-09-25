@@ -20,6 +20,14 @@
     </div>
 
     <div class="attendance-toolbar">
+        {{-- بحث بالاسم (طلب صريح من يحيى) — نفس مربّع البحث في لوحة "قرآن"،
+             لكن مربوط بنفس آلية إعادة تحميل الصفحة عبر معاملات الرابط
+             المستعملة أصلًا لحقل التاريخ أدناه (هذه الصفحة عرض فقط بلا
+             نموذج GET، راجع تعليق AttendanceController). --}}
+        <div class="field">
+            <label class="field-label" for="attendanceSearch">ابحث باسم الطالب</label>
+            <input class="input" type="search" id="attendanceSearch" value="{{ $search }}" placeholder="ابحث باسم الطالب">
+        </div>
         <div class="field">
             <label class="field-label" for="attendanceDate">اليوم</label>
             <input class="input" type="date" id="attendanceDate" value="{{ $date }}" max="{{ now()->toDateString() }}">
@@ -85,6 +93,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
         params.set('date', dateInput.value);
         window.location.search = params.toString();
+    });
+
+    // بحث بالاسم (طلب صريح من يحيى) — نفس مبدأ حقل التاريخ أعلاه (إعادة
+    // تحميل بمعامل رابط جديد)، بتأخير بسيط (debounce) حتى لا تُعاد الصفحة
+    // مع كل حرف يُكتب.
+    const searchInput = document.getElementById('attendanceSearch');
+    let searchDebounce;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            const params = new URLSearchParams(window.location.search);
+            if (searchInput.value) {
+                params.set('q', searchInput.value);
+            } else {
+                params.delete('q');
+            }
+            window.location.search = params.toString();
+        }, 500);
     });
 });
 </script>

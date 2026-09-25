@@ -29,10 +29,13 @@
         <div class="app-header-inner">
             {{-- وجهة الشعار تتبع الدور: لوحة الطلاب لا وجود لها في حساب المدير
                  (طلابه صفر دائمًا بحكم عزل TeacherScope). --}}
+            {{-- الشعاران الجديدان (طلب يحيى 2026-09-25) يتضمّنان اسم "رِواق"
+                 مرسومًا داخل الصورة نفسها أسفل الرمز — لا نص HTML منفصل بجانبه
+                 بعد اليوم (كان يظهر مكرَّرًا: الكلمة داخل الصورة القديمة غير
+                 واضحة + <span> نصي بجانبها). --}}
             <a href="{{ auth()->user()?->isAdmin() ? route('admin.teachers.index') : route('dashboard') }}" class="brand">
                 <img src="{{ asset('images/logo-mark-light.png') }}" alt="رِواق" class="brand-mark-img is-light">
                 <img src="{{ asset('images/logo-mark-dark.png') }}" alt="رِواق" class="brand-mark-img is-dark">
-                <span>رِواق</span>
             </a>
 
             @auth

@@ -9,6 +9,8 @@ use App\Http\Resources\StudentResource;
 use App\Models\Attendance;
 use App\Models\Circle;
 use App\Models\Poem;
+use App\Models\PoemChapter;
+use App\Models\PoemRecitationLog;
 use App\Models\RecitationLog;
 use App\Models\Student;
 use App\Models\Surah;
@@ -330,7 +332,39 @@ class StudentController extends Controller
 
         $this->authorize('update', $student);
 
-        $logs = $student->recitationLogs()->with(['surah', 'toSurah'])->paginate(20);
+        // (تصحيح خلل، بلاغ يحيى: "المفترض أن يكون السجل الزمني شاملًا للقرآن
+        // درس ومراجعة وللمتون حفظ ومراجعة") — كانت "السجلّات الأخيرة" تعرض
+        // سجلّات القرآن فقط (recitation_logs)، فتختفي منها كل سجلّات المتون
+        // (poem_recitation_logs) رغم ظهورها في قسم "المتون" أعلى الصفحة. صارت
+        // الآن قائمة واحدة مدموجة من الجدولين معًا، مرتَّبة بالتاريخ تنازليًا
+        // (logged_at ثم id، نفس ترتيب كلا العلاقتين في Student) ثم مقسَّمة
+        // صفحات يدويًا — جدولان مختلفان لا يمكن ترقيمهما معًا على مستوى
+        // القاعدة مباشرة، فيُجلبان كاملَين (سجلّات طالب واحد، عدد محدود
+        // بطبيعته) ويُدمَجان في الذاكرة، بنفس أسلوب الترقيم اليدوي المستعمَل
+        // أصلًا في index() لحالة الفلترة المتقدّمة.
+        $quranLogs = $student->recitationLogs()->with(['surah', 'toSurah'])->get();
+        $poemLogsForTimeline = $student->poemRecitationLogs()->with('poem')->get();
+
+        $allLogs = $quranLogs->concat($poemLogsForTimeline)
+            ->sortByDesc(fn ($log) => $log->logged_at->format('Y-m-d').'-'.str_pad($log->id, 10, '0', STR_PAD_LEFT))
+            ->values();
+
+        // (S25 — بطلب صريح من يحيى: "السجلّات الأخيرة يجمع لك كل التسجيلات
+        // مهما كان عددها، المفترض يكون في القائمة الوحدة 12 ... بعدين فيه
+        // قائمة ثانية فيها 12 أو الباقي"): كانت 20 سجلًا لكل صفحة — صارت 12
+        // كما طلب، والترقيم القائم أصلًا (Paginator) يتكفّل تلقائيًا بصفحة
+        // ثانية للباقي (أو أقل من 12 لو كان هذا آخر ما تبقّى).
+        $logsPage = max(1, (int) request()->query('page', 1));
+        $logsPerPage = 12;
+        $logs = new \Illuminate\Pagination\LengthAwarePaginator(
+            $allLogs->forPage($logsPage, $logsPerPage)->values(),
+            $allLogs->count(),
+            $logsPerPage,
+            $logsPage,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
+        $logs->appends(request()->query());
+
         $surahs = Surah::inMemorizationOrder()->get(['id', 'number', 'name', 'ayah_count', 'memorization_order', 'excluded_from_progress']);
 
         // المنحنى صار بالنسبة المئوية لا بعدد الآيات التراكمي (S14): إعادة
@@ -400,21 +434,66 @@ class StudentController extends Controller
         $poemProgress = app(PoemProgress::class);
         $trackedPoems = $student->trackedPoems();
 
+        // (S25 — بطلب صريح من يحيى "أبغى للمتن منحيين زي ما للدرس منحنى
+        // وللمراجعة منحنى"): كل متن متتبَّع يحمل الآن نسبتين ومنحنيين، تمامًا
+        // كمثيلَي القرآن أعلاه (percent/chartPoints لحفظ، reviewPercent/
+        // reviewChartPoints لمراجعة) — نفس صنف PoemProgress يخدم الاثنين
+        // بمعامل $type (راجع تعليق الصنف).
         $poemsData = $trackedPoems->map(function (Poem $poem) use ($student, $poemProgress) {
+            $latestMemorization = $student->latestPoemLog($poem->id, 'حفظ');
+            $latestReview = $student->latestPoemLog($poem->id, 'مراجعة');
+
             return (object) [
                 'poem'                => $poem,
-                'percent'             => $poemProgress->percentage($student, $poem),
-                'latest_memorization' => $student->latestPoemLog($poem->id, 'حفظ'),
-                'latest_review'       => $student->latestPoemLog($poem->id, 'مراجعة'),
+                'percent'             => $poemProgress->percentage($student, $poem, 'حفظ'),
+                'latest_memorization' => $latestMemorization,
+                'latest_review'       => $latestReview,
                 // منحنى حفظ هذا المتن تحديدًا (S16) — يُعرض في بطاقة صغيرة
                 // داخل قسم المتون، مفتاحه معرّف المتن في JS (خرائط لا مصفوفة).
-                'chart_points'        => $poemProgress->timeline($student, $poem),
+                'chart_points'        => $poemProgress->timeline($student, $poem, 'حفظ'),
+                // نسبة ومنحنى المراجعة (S25) — نظيرا الحفظ أعلاه تمامًا، بنوع
+                // "مراجعة" بدل "حفظ".
+                'review_percent'      => $poemProgress->percentage($student, $poem, 'مراجعة'),
+                'review_chart_points' => $poemProgress->timeline($student, $poem, 'مراجعة'),
+                // "الباب الحالي" (S39 — بطلب يحيى، مستند "أبواب المتون
+                // الستة"): الباب الذي يقع فيه آخر بيت وصل إليه الطالب في كل
+                // نوع (حفظ/مراجعة) — نفس آخر سطر معروض أصلًا (latest_*)
+                // أعلاه، لا حساب إضافي مستقل قد يعطي رقمًا مختلفًا. null إن
+                // لم يسجَّل شيء بعد لهذا النوع، أو إن كان البيت خارج كل
+                // الأبواب المزروعة لهذا المتن (راجع تعليق Poem::chapterAt()).
+                'current_chapter_memorization' => $latestMemorization
+                    ? $poem->chapterAt((int) $latestMemorization->to_bayt)
+                    : null,
+                'current_chapter_review' => $latestReview
+                    ? $poem->chapterAt((int) $latestReview->to_bayt)
+                    : null,
             ];
         });
 
         // كل المتون الخمسة (لا المتتبَّعة فقط) لازمة لقائمة "إضافة سجلّ متن" —
         // يمكن اختيار متن لم يبدأ الطالب تتبّعه بعد.
-        $allPoems = Poem::orderBy('name')->get();
+        // eager-load الأبواب (S40 — طلب صريح من يحيى): زرّ "مراجعة بالأبواب"
+        // الجديد في نموذج المراجعة يحتاج قائمة أبواب كل متن في الواجهة
+        // (مصدرها JSON مُضمَّن في القالب لا استعلام إضافي)، فبلا هذا الـ
+        // eager-load كانت كل بطاقة متن ستُطلق استعلام chapters منفصل (N+1).
+        $allPoems = Poem::with('chapters')->orderBy('name')->get();
+
+        // خريطة معرّف متن ⇐ أبوابه (S40 — "مراجعة بالأبواب") — تُحسب هنا لا
+        // داخل @json(...) مباشرة في القالب: توجيه compileJson في Blade
+        // (Illuminate\View\Compilers\Concerns\CompilesJson::compileJson)
+        // يُقسّم وسيطه بفاصلة عادية (explode(',', ...)) بلا وعي بالأقواس
+        // إطلاقًا، فأي تعبير PHP بمصفوفة متعددة المفاتيح (أي فاصلة) داخل
+        // @json(...) مباشرة يُفسِد السطر المُصرَّف (بالضبط الخطأ الذي واجهه
+        // يحيى: "Unclosed '[' ... does not match ')'"). الحل: نفس نمط
+        // $quranUnits أدناه — القيمة جاهزة كمتغيّر عادي بلا أي فاصلة في
+        // استدعاء @json نفسه.
+        $poemChapters = $allPoems->mapWithKeys(fn (Poem $poem) => [
+            $poem->id => $poem->chapters->map(fn (PoemChapter $chapter) => [
+                'name'      => $chapter->name,
+                'from_bayt' => $chapter->from_bayt,
+                'to_bayt'   => $chapter->to_bayt,
+            ]),
+        ]);
 
         // قائمة الحلقات لزرّ "تعديل" الجديد (اسم الطالب + الحلقة معًا) —
         // انتقل هذا التعديل إلى هنا من صفّ اللوحة الرئيسية بطلب صريح من
@@ -423,11 +502,18 @@ class StudentController extends Controller
         // بين المعلّمين تلقائي عبر Scope الموديل، لا شرط مكتوب هنا.
         $circles = Circle::orderBy('name')->get();
 
+        // (تصحيح خلل: نموذج "إضافة سجلّ مراجعة" في هذه الصفحة كان يعرض
+        // "من سورة/إلى سورة" فقط بلا خيار الجزء/الحزب المتاح أصلًا في نافذة
+        // التسجيل السريع بلوحة "قرآن" — نفس المرجع الثابت (القرار #54)
+        // يُمرَّر هنا الآن أيضًا حتى يتطابق الخياران في كل نقاط الدخول.
+        $quranUnits = app(QuranUnitReference::class)->all();
+
         return view('students.show', compact(
             'student', 'logs', 'surahs', 'chartPoints', 'monthStart', 'attendanceByDate',
             'completedSurahs', 'furthestSurah', 'poemsData', 'allPoems', 'circles',
             'reviewPercent', 'reviewQuartersDone', 'reviewHizbDone', 'reviewQuarterRemainder',
-            'attendanceDaysCount', 'totalReviewsCount', 'reviewChartPoints'
+            'attendanceDaysCount', 'totalReviewsCount', 'reviewChartPoints', 'quranUnits',
+            'poemChapters'
         ));
     }
 

@@ -7,7 +7,6 @@ use App\Models\RecitationLog;
 use App\Models\Student;
 use App\Models\Surah;
 use App\Support\Concerns\MergesAyahRanges;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -165,31 +164,48 @@ class MemorizationProgress
     }
 
     /**
-     * نسبة الحفظ "كما كانت" حتى تاريخ سابق، لمجموعة طلاب — أساس مؤشّر الاتجاه
-     * (v2) لبطاقة "متوسّط نسبة التقدّم". لا خوارزمية موازية جديدة إطلاقًا: نفس
-     * coverageFromLogs()/applyCascade()/percentageFromLogs() المستعملة في
-     * percentage()/warmFor()/timeline() بالضبط، فقط على سجلّات "حفظ" المسجَّلة
-     * حتى $asOf (تاريخًا) دون ما بعده — بمنطق الانسياب نفسه، فطالب بلغ سورة
-     * متأخّرة بعد $asOf لا يُحتسَب هنا كأنه بلغها فعلًا في ذلك التاريخ.
-     * استعلام واحد لكل الطلاب (لا استعلام لكل طالب)، بنفس مبدأ warmFor()
-     * تمامًا. طالب بلا أي سجلّ حفظ قبل $asOf غائب عن المصفوفة المُعادة (لا
-     * صفر ضمنيًا) — القرار متروك للمستدعي (صفر فعلي، أو استبعاد من المتوسّط).
+     * إسقاط ما هو مخزَّن لطالب بعد تغيير سجلّه في نفس الطلب (إضافة/حذف سطر)
+     * — الخدمة singleton، فبلا هذا قد يُقرأ رقم ما قبل التغيير.
+     */
+    public function forget(Student $student): void
+    {
+        $studentId = (int) $student->student_id;
+
+        unset($this->coverageCache[$studentId], $this->percentageCache[$studentId]);
+    }
+
+    /**
+     * نسبة الحفظ الموزونة بالأرباع كما كانت في تاريخ سابق ($asOf) لا الآن —
+     * أساس "مؤشّر اتجاه التقدّم" (v2) في AdminOverviewController/ReportController
+     * (راجع تعليق AdminOverviewController::index() لتفصيل السياق الكامل):
+     * مقارنة المتوسّط الحالي بمتوسّطه قبل 30 يومًا مثلًا.
      *
-     * whereDate لا مقارنة خام على logged_at للسبب نفسه الموثَّق في
-     * ReportController::periodRows()/AttendanceController::store(): كاست
-     * "date" يخزّن وقتًا كاملاً خلف التاريخ على SQLite، فمقارنة خام قد تستثني
-     * سطور اليوم الأخير من المدى.
+     * (S25 — إصلاح خطأ "Call to undefined method percentagesAsOf()" الذي
+     * أوقف /reports وتقرير المعلّم في لوحة المدير: كان هذا الاستدعاء موجودًا
+     * فعلًا في كلا المتحكّمَين مع تعليق تصميمي كامل يشرحها، لكن الدالة نفسها
+     * لم تكن مكتوبة هنا إطلاقًا — أُضيفت الآن بالضبط كما وصفها ذلك التعليق):
+     * تُعيد بناء نفس صيغة percentage() تمامًا عبر الـ private helpers القائمة
+     * فعلًا (coverageFromLogs/applyCascade/percentageFromLogs)، لا خوارزمية
+     * موازية جديدة قد تنحرف عن percentage() المُختبَرة أصلًا — فقط سجلّات
+     * "حفظ" المسجَّلة حتى $asOf تُستبعَد بعده. طالب بلا أي سجلّ "حفظ" قبل
+     * $asOf نسبته 0% حقيقةً في ذلك التاريخ (لا يُستبعَد من النتيجة).
+     *
+     * استعلام واحد لكل الطلاب معًا (نفس مبدأ warmFor() أعلاه) بدل استعلام لكل
+     * طالب — تُستدعى هذه الدالة لمجموعة طلاب كاملة (كل الطلاب النشطين مثلًا)
+     * لا لطالب واحد.
      *
      * @param  iterable<Student>  $students
-     * @return array<int, float> [student_id => نسبة الحفظ في ذلك التاريخ]
+     * @return array<int, float> [student_id => نسبة الحفظ كما كانت في $asOf]
      */
-    public function percentagesAsOf(iterable $students, Carbon $asOf): array
+    public function percentagesAsOf(iterable $students, \Carbon\Carbon $asOf): array
     {
-        $ids = collect($students)->map(fn (Student $s) => (int) $s->student_id)->values();
+        $studentsById = collect($students)->keyBy(fn (Student $s) => (int) $s->student_id);
 
-        if ($ids->isEmpty()) {
+        if ($studentsById->isEmpty()) {
             return [];
         }
+
+        $ids = $studentsById->keys()->values();
 
         $logsByStudent = RecitationLog::query()
             ->whereIn('student_id', $ids)
@@ -201,24 +217,16 @@ class MemorizationProgress
 
         $result = [];
 
-        foreach ($logsByStudent as $studentId => $logs) {
+        foreach ($studentsById as $id => $student) {
+            $logs = $logsByStudent->get($id) ?? collect();
+
             $coverage = $this->coverageFromLogs($logs);
             $this->applyCascade($coverage);
-            $result[(int) $studentId] = $this->percentageFromLogs($logs, $coverage);
+
+            $result[$id] = $this->percentageFromLogs($logs, $coverage);
         }
 
         return $result;
-    }
-
-    /**
-     * إسقاط ما هو مخزَّن لطالب بعد تغيير سجلّه في نفس الطلب (إضافة/حذف سطر)
-     * — الخدمة singleton، فبلا هذا قد يُقرأ رقم ما قبل التغيير.
-     */
-    public function forget(Student $student): void
-    {
-        $studentId = (int) $student->student_id;
-
-        unset($this->coverageCache[$studentId], $this->percentageCache[$studentId]);
     }
 
     /**
@@ -495,8 +503,18 @@ class MemorizationProgress
             $points[optional($log->logged_at)->toDateString()] = $this->percentageFromLogs($seenLogs, $coverage);
         }
 
+        // (S25 — بطلب صريح من يحيى: "التواريخ تجيها بصيغة 2026-04-20، صعّبت
+        // علي معرفة اليوم والشهر بسرعة"): أُضيف حقل label بصيغة عربية مقروءة
+        // ("20 أبريل 2026") يُستعمل في عرض المنحنى (محور السينات والتلميح
+        // في student-timeline.js)، بينما date يبقى بصيغته الأصلية (Y-m-d) —
+        // مفتاح الفرز/التجميع اليومي/الأسبوعي/الشهري في الواجهة الأمامية،
+        // لا يظهر للمعلّم مباشرة.
         return collect($points)
-            ->map(fn (float $percent, string $date) => ['date' => $date, 'percent' => $percent])
+            ->map(fn (float $percent, string $date) => [
+                'date'    => $date,
+                'label'   => \Carbon\Carbon::parse($date)->translatedFormat('j F Y'),
+                'percent' => $percent,
+            ])
             ->values();
     }
 

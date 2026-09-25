@@ -47,9 +47,14 @@
         </div>
     @else
         @php
-            $hasAnyFilter = $selectedPoemIds || $circleIds || $progressMin !== null || $progressMax !== null;
+            $hasAnyFilter = $search !== '' || $selectedPoemIds || $circleIds || $progressMin !== null || $progressMax !== null;
         @endphp
         <form method="GET" action="{{ route('poems.index') }}" class="search-filter-form">
+            {{-- بحث بالاسم (طلب صريح من يحيى) — نفس مربّع البحث في لوحة "قرآن"
+                 والسجلات حرفيًا. --}}
+            <label class="sr-only" for="poemsSearch">ابحث باسم الطالب</label>
+            <input class="input" type="search" id="poemsSearch" name="q" value="{{ $search }}" placeholder="ابحث باسم الطالب">
+
             <details class="filter-dropdown">
                 <summary class="btn btn-sm btn-secondary">
                     المتن @if ($selectedPoemIds) ({{ count($selectedPoemIds) }}) @endif

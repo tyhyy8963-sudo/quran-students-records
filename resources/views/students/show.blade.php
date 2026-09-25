@@ -184,27 +184,86 @@
         </div>
     </div>
 
-    {{-- المتون (S15) — تتبّع متوازٍ: أيّ عدد من الخمسة معًا لا متن واحد نشط. --}}
+    {{--
+        المتون (S15) — تتبّع متوازٍ: أيّ عدد من الخمسة معًا لا متن واحد نشط.
+
+        (S25 — بطلب صريح من يحيى: "أبغى للمتن منحيين زي ما للدرس منحنى
+        وللمراجعة منحنى ... بنفس الطريقة للحفظ منحنى وللمراجعة منحنى"، ثم
+        بعد معاينته الفعلية: "لا أبغاك تفصلهم تماما كما فصلت منحنى الحفظ
+        والمراجعة للقرآن واجعلهم بنفس التصميم"). أول محاولة اكتفت بإضافة
+        منحنى مراجعة داخل بطاقة صغيرة غير منسَّقة — صار الآن كل منحنيَي متن
+        (حفظ ومراجعة) بطاقتَي `.chart-card` كاملتين، كلّ منهما برأسها الخاصّ
+        ومبدّل التجميع يومي/أسبوعي/شهري الخاصّ بها، طبق الأصل من بطاقتَي
+        "منحنى تقدّم الحفظ"/"منحنى تقدّم المراجعة" في شبكة "التحليلات
+        والإحصائيات" أسفله (نفس الأصناف: card card-pad chart-card،
+        chart-card-head، granularity-toggle). كل أزرار التجميع في الصفحة
+        (بما فيها أزرار كل متن هنا) تشترك نفس currentGranularity في
+        student-timeline.js — لا حالة منفصلة لكل بطاقة.
+    --}}
     <div class="card card-pad" style="margin-top: var(--space-5);">
         <h2 class="mt-0">المتون</h2>
         <div id="poemsList">
             @forelse ($poemsData as $entry)
                 <div class="poem-entry" data-poem-id="{{ $entry->poem->id }}"
-                     style="margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid rgba(127,127,127,.25);">
-                    <div class="position"><strong>{{ $entry->poem->name }}</strong> — {{ $entry->percent }}%</div>
-                    @if ($entry->latest_memorization)
-                        <div class="position">آخر حفظ: بيت {{ $entry->latest_memorization->to_bayt }}</div>
-                    @else
-                        <div class="position text-muted">لم يبدأ الحفظ بعد</div>
-                    @endif
-                    @if ($entry->latest_review)
-                        <div class="position">آخر مراجعة: من بيت {{ $entry->latest_review->from_bayt ?? 1 }} إلى بيت {{ $entry->latest_review->to_bayt }}</div>
-                    @endif
-                    {{-- منحنى حفظ هذا المتن (S16) — بنفس مبدأ منحنيي الحفظ
-                         والمراجعة أعلاه، لكن لكل متن على حدة داخل بطاقته. --}}
-                    @if ($entry->chart_points->isNotEmpty())
-                        <canvas id="poemChart-{{ $entry->poem->id }}" height="120" style="margin-top: var(--space-2);"></canvas>
-                    @endif
+                     style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid rgba(127,127,127,.25);">
+                    <h3 style="margin: 0 0 var(--space-2);">{{ $entry->poem->name }}</h3>
+                    <div class="position">
+                        نسبة الحفظ {{ $entry->percent }}%
+                        @if ($entry->latest_memorization)
+                            — آخر حفظ: بيت {{ $entry->latest_memorization->to_bayt }}
+                            @if ($entry->current_chapter_memorization)
+                                (الباب الحالي: {{ $entry->current_chapter_memorization->name }})
+                            @endif
+                        @else
+                            — لم يبدأ الحفظ بعد
+                        @endif
+                    </div>
+                    <div class="position">
+                        نسبة المراجعة {{ $entry->review_percent }}%
+                        @if ($entry->latest_review)
+                            — آخر مراجعة: من بيت {{ $entry->latest_review->from_bayt ?? 1 }} إلى بيت {{ $entry->latest_review->to_bayt }}
+                            @if ($entry->current_chapter_review)
+                                (الباب الحالي: {{ $entry->current_chapter_review->name }})
+                            @endif
+                        @endif
+                    </div>
+
+                    {{-- منحنيا حفظ ومراجعة هذا المتن (S16، أُعيد تصميمهما S25) —
+                         نفس بطاقتَي "منحنى تقدّم الحفظ"/"منحنى تقدّم المراجعة"
+                         أسفله حرفيًا، لكن لهذا المتن تحديدًا. --}}
+                    <div class="analytics-grid" style="margin-top: var(--space-3);">
+                        <div class="card card-pad chart-card">
+                            <div class="chart-card-head">
+                                <h2>منحنى الحفظ</h2>
+                                <div class="granularity-toggle" data-granularity-group>
+                                    <button type="button" class="btn btn-sm btn-ghost is-active" data-granularity="daily">يومي</button>
+                                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="weekly">أسبوعي</button>
+                                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="monthly">شهري</button>
+                                </div>
+                            </div>
+                            @if ($entry->chart_points->isEmpty())
+                                <p class="text-muted">لا بيانات كافية لعرض منحنى بعد — أضف أول سجلّ حفظ لهذا المتن.</p>
+                            @else
+                                <canvas id="poemChart-{{ $entry->poem->id }}" height="180"></canvas>
+                            @endif
+                        </div>
+
+                        <div class="card card-pad chart-card">
+                            <div class="chart-card-head">
+                                <h2>منحنى المراجعة</h2>
+                                <div class="granularity-toggle" data-granularity-group>
+                                    <button type="button" class="btn btn-sm btn-ghost is-active" data-granularity="daily">يومي</button>
+                                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="weekly">أسبوعي</button>
+                                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="monthly">شهري</button>
+                                </div>
+                            </div>
+                            @if ($entry->review_chart_points->isEmpty())
+                                <p class="text-muted">لا بيانات كافية لعرض منحنى بعد — أضف أول سجلّ مراجعة لهذا المتن.</p>
+                            @else
+                                <canvas id="poemReviewChart-{{ $entry->poem->id }}" height="180"></canvas>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             @empty
                 {{-- (S24 — بطلب صريح من يحيى): "أرضية متن" اليدوية أُلغيت
@@ -228,82 +287,105 @@
         يشتركان نفس حالة التجميع في الخلفية (كلاهما داخل مصفوفة controllers
         في student-timeline.js)، فأصبح لكل بطاقة الآن مجموعة أزرارها الخاصّة
         وكلتاهما تُحدَّثان معًا بفضل هذا التشارك (راجع تعليق الملف نفسه).
+
+        (S25 — بطلب صريح من يحيى، بصورة مرجعية: "فيه إطار كبير يجمع منحيين
+        المتون وعنوانه المتون أما للقرآن لا يوجد ... أبغاك تسوي لمنحييات
+        القرآن نفس ما سويت لمنحييات المتون من براوزر أو إطار وتخلي العنوان
+        حق الإطار القرآن"): كان العنوان "التحليلات والإحصائيات" نصًّا حرًّا
+        فوق `.analytics-grid` بلا إطار جامع — بخلاف قسم "المتون" أعلاه
+        (بطاقة `.card.card-pad` واحدة عنوانها داخلها). صار هذا القسم الآن
+        بنفس البنية حرفيًا: بطاقة `.card.card-pad` خارجية تحمل العنوان (بصنف
+        `.mt-0` نفسه المستعمل في عنوان "المتون").
+
+        (تصحيح فوري، بلاغ يحيى بعد معاينته الفعلية: "المفترض يكون فصل بين
+        التقويم ومنحييات القرآن لماذا في نفس الإطار؟؟؟"): كانت بطاقة
+        التقويم قد انضمّت للتوّ (بالخطأ) داخل نفس إطار "التحليلات
+        والإحصائيات" مع المنحنيَين — فالإطار الجامع هنا مقصود لمنحنيَي القرآن
+        فقط (تمامًا كما طلب يحيى بالصورة المرجعية)، لا للتقويم أيضًا. صار
+        التقويم الآن بطاقة مستقلّة تمامًا خارج هذا الإطار، بنفس مستوى بطاقتَي
+        "المتون" و"التحليلات والإحصائيات" (قسم قائم بذاته له مسافته الخاصة،
+        لا عنوان نصّي فوقه لأنه لم يكن له عنوان أصلًا قبل هذا التعديل كله).
     --}}
-    <h2 style="margin-top: var(--space-5); margin-bottom: var(--space-3);">التحليلات والإحصائيات</h2>
-    <div class="analytics-grid">
-        <div class="card card-pad chart-card">
-            <div class="chart-card-head">
-                <h2>منحنى تقدّم الحفظ</h2>
-                {{-- تبديل التجميع (S16): يوقّت منحنيي الحفظ والمراجعة معًا
-                     (والمتون أدناه) — النقاط تبقى نسبة تراكمية، فالتجميع يأخذ
-                     آخر نقطة في كل حاوية زمنية لا مجموعها أو متوسطها. --}}
-                <div id="chartGranularityToggle" class="granularity-toggle">
-                    <button type="button" class="btn btn-sm btn-ghost is-active" data-granularity="daily">يومي</button>
-                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="weekly">أسبوعي</button>
-                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="monthly">شهري</button>
-                </div>
-            </div>
-            @if ($chartPoints->isEmpty())
-                <p class="text-muted">لا بيانات كافية لعرض منحنى بعد — أضف أول سجلّ حفظ.</p>
-            @else
-                <canvas id="progressChart" height="220"></canvas>
-            @endif
-        </div>
-
-        {{-- منحنى تقدّم المراجعة (S23.5) — نظير منحنى الحفظ أعلاه تمامًا،
-             بما فيه مبدّل التجميع يومي/أسبوعي/شهري الخاصّ به (بطلب يحيى) —
-             يعمل بالاشتراك الفعلي مع مبدّل منحنى الحفظ (كلاهما ضمن نفس
-             currentGranularity في student-timeline.js)، فالنقر على أي زرّ في
-             أي من البطاقتين يحدّث المنحنيَين معًا ويُبقي كل الأزرار متوافقة
-             بصريًا. --}}
-        <div class="card card-pad chart-card">
-            <div class="chart-card-head">
-                <h2>منحنى تقدّم المراجعة</h2>
-                <div class="granularity-toggle" data-granularity-group>
-                    <button type="button" class="btn btn-sm btn-ghost is-active" data-granularity="daily">يومي</button>
-                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="weekly">أسبوعي</button>
-                    <button type="button" class="btn btn-sm btn-ghost" data-granularity="monthly">شهري</button>
-                </div>
-            </div>
-            @if ($reviewChartPoints->isEmpty())
-                <p class="text-muted">لا بيانات كافية لعرض منحنى بعد — أضف أول سجلّ مراجعة.</p>
-            @else
-                <canvas id="reviewProgressChart" height="220"></canvas>
-            @endif
-        </div>
-
-        <div class="card card-pad calendar-card">
-            <div class="calendar-nav">
-                <a href="?month={{ $monthStart->copy()->subMonth()->format('Y-m') }}" class="btn btn-sm btn-ghost">← الشهر السابق</a>
-                <span class="month-label">{{ $monthStart->translatedFormat('F Y') }}</span>
-                <a href="?month={{ $monthStart->copy()->addMonth()->format('Y-m') }}" class="btn btn-sm btn-ghost">الشهر التالي →</a>
-            </div>
-            <div class="calendar-grid">
-                @foreach (['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'] as $weekday)
-                    <div class="calendar-weekday">{{ $weekday }}</div>
-                @endforeach
-                @php $leadingBlanks = $monthStart->copy()->startOfMonth()->dayOfWeek; @endphp
-                @for ($i = 0; $i < $leadingBlanks; $i++)
-                    <div class="calendar-day is-empty"></div>
-                @endfor
-                @for ($day = 1; $day <= $monthStart->daysInMonth; $day++)
-                    @php
-                        $dateStr = $monthStart->copy()->day($day)->toDateString();
-                        $entry = $attendanceByDate->get($dateStr);
-                    @endphp
-                    <div class="calendar-day" @if ($entry) data-status="{{ $entry->status }}" title="{{ $entry->status }}" @endif>
-                        <span class="day-num">{{ $day }}</span>
+    <div class="card card-pad" style="margin-top: var(--space-5);">
+        <h2 class="mt-0">القرآن</h2>
+        <div class="analytics-grid" style="margin-top: var(--space-3);">
+            <div class="card card-pad chart-card">
+                <div class="chart-card-head">
+                    <h2>منحنى تقدّم الحفظ</h2>
+                    {{-- تبديل التجميع (S16): يوقّت منحنيي الحفظ والمراجعة معًا
+                         (والمتون أعلاه) — النقاط تبقى نسبة تراكمية، فالتجميع
+                         يأخذ آخر نقطة في كل حاوية زمنية لا مجموعها أو
+                         متوسطها. --}}
+                    <div id="chartGranularityToggle" class="granularity-toggle">
+                        <button type="button" class="btn btn-sm btn-ghost is-active" data-granularity="daily">يومي</button>
+                        <button type="button" class="btn btn-sm btn-ghost" data-granularity="weekly">أسبوعي</button>
+                        <button type="button" class="btn btn-sm btn-ghost" data-granularity="monthly">شهري</button>
                     </div>
-                @endfor
+                </div>
+                @if ($chartPoints->isEmpty())
+                    <p class="text-muted">لا بيانات كافية لعرض منحنى بعد — أضف أول سجلّ حفظ.</p>
+                @else
+                    <canvas id="progressChart" height="220"></canvas>
+                @endif
             </div>
-            <div class="calendar-legend">
-                @foreach (\App\Models\Attendance::STATUSES as $value => $label)
-                    {{-- data-status لا class خام (S22): بعض القيم الجديدة تحتوي مسافة
-                         ("غائب بعذر")، فوضعها كاسم صنف CSS مباشرة يُقسِّمها المتصفّح
-                         خطأً إلى صنفين منفصلين. --}}
-                    <span><span class="dot" data-status="{{ $value }}"></span>{{ $label }}</span>
-                @endforeach
+
+            {{-- منحنى تقدّم المراجعة (S23.5) — نظير منحنى الحفظ أعلاه تمامًا،
+                 بما فيه مبدّل التجميع يومي/أسبوعي/شهري الخاصّ به (بطلب يحيى) —
+                 يعمل بالاشتراك الفعلي مع مبدّل منحنى الحفظ (كلاهما ضمن نفس
+                 currentGranularity في student-timeline.js)، فالنقر على أي زرّ
+                 في أي من البطاقتين يحدّث المنحنيَين معًا ويُبقي كل الأزرار
+                 متوافقة بصريًا. --}}
+            <div class="card card-pad chart-card">
+                <div class="chart-card-head">
+                    <h2>منحنى تقدّم المراجعة</h2>
+                    <div class="granularity-toggle" data-granularity-group>
+                        <button type="button" class="btn btn-sm btn-ghost is-active" data-granularity="daily">يومي</button>
+                        <button type="button" class="btn btn-sm btn-ghost" data-granularity="weekly">أسبوعي</button>
+                        <button type="button" class="btn btn-sm btn-ghost" data-granularity="monthly">شهري</button>
+                    </div>
+                </div>
+                @if ($reviewChartPoints->isEmpty())
+                    <p class="text-muted">لا بيانات كافية لعرض منحنى بعد — أضف أول سجلّ مراجعة.</p>
+                @else
+                    <canvas id="reviewProgressChart" height="220"></canvas>
+                @endif
             </div>
+        </div>
+    </div>
+
+    {{-- بطاقة التقويم — مستقلّة تمامًا عن إطار "التحليلات والإحصائيات"
+         أعلاه (راجع تعليق القسم السابق: فصل صريح بطلب يحيى). --}}
+    <div class="card card-pad calendar-card" style="margin-top: var(--space-5);">
+        <div class="calendar-nav">
+            <a href="?month={{ $monthStart->copy()->subMonth()->format('Y-m') }}" class="btn btn-sm btn-ghost">← الشهر السابق</a>
+            <span class="month-label">{{ $monthStart->translatedFormat('F Y') }}</span>
+            <a href="?month={{ $monthStart->copy()->addMonth()->format('Y-m') }}" class="btn btn-sm btn-ghost">الشهر التالي →</a>
+        </div>
+        <div class="calendar-grid">
+            @foreach (['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'] as $weekday)
+                <div class="calendar-weekday">{{ $weekday }}</div>
+            @endforeach
+            @php $leadingBlanks = $monthStart->copy()->startOfMonth()->dayOfWeek; @endphp
+            @for ($i = 0; $i < $leadingBlanks; $i++)
+                <div class="calendar-day is-empty"></div>
+            @endfor
+            @for ($day = 1; $day <= $monthStart->daysInMonth; $day++)
+                @php
+                    $dateStr = $monthStart->copy()->day($day)->toDateString();
+                    $entry = $attendanceByDate->get($dateStr);
+                @endphp
+                <div class="calendar-day" @if ($entry) data-status="{{ $entry->status }}" title="{{ $entry->status }}" @endif>
+                    <span class="day-num">{{ $day }}</span>
+                </div>
+            @endfor
+        </div>
+        <div class="calendar-legend">
+            @foreach (\App\Models\Attendance::STATUSES as $value => $label)
+                {{-- data-status لا class خام (S22): بعض القيم الجديدة تحتوي مسافة
+                     ("غائب بعذر")، فوضعها كاسم صنف CSS مباشرة يُقسِّمها المتصفّح
+                     خطأً إلى صنفين منفصلين. --}}
+                <span><span class="dot" data-status="{{ $value }}"></span>{{ $label }}</span>
+            @endforeach
         </div>
     </div>
 
@@ -382,7 +464,21 @@
         <h2 class="mt-0">إضافة سجلّ مراجعة جديد</h2>
         <form id="addReviewLogForm">
             @csrf
-            <div class="form-grid-2">
+            {{-- (تصحيح خلل، بلاغ يحيى: "لمن تدخل السجل وتبغى تسجل المراجعة من
+                 داخل السجل ما يطلع لك إلا خيار السور والآيات فقط دون
+                 الأحزاب والأجزاء"): طريقة إدخال ثانية — نفس خيار "بالجزء/
+                 الحزب" الموجود أصلًا في نافذة التسجيل السريع بلوحة "قرآن"
+                 (القرار #54)، أُضيف هنا أيضًا حتى يتطابق نموذج المراجعة في
+                 كل نقاط الدخول. لا تغيير في الخادم — تُحلّ الوحدة المختارة
+                 إلى (سورة/آية) في JS ثم تُرسَل بنفس حقول النموذج تمامًا. --}}
+            <div class="field">
+                <label class="field-label" for="review_entry_mode">طريقة الإدخال</label>
+                <select class="input" id="review_entry_mode">
+                    <option value="surah">من سورة</option>
+                    <option value="unit">بالجزء/الحزب</option>
+                </select>
+            </div>
+            <div class="form-grid-2" id="reviewSurahFields">
                 <div class="field">
                     <label class="field-label" for="review_surah_id">من سورة</label>
                     <select class="input" id="review_surah_id" name="surah_id" required>
@@ -421,6 +517,31 @@
                     <input class="input" type="number" min="1" id="review_to_ayah" name="to_ayah" required>
                     <span class="field-error" data-for="to_ayah"></span>
                 </div>
+            </div>
+            {{-- وحدات الجزء/الحزب/نصف حزب/ربع حزب (القرار #54) — نفس آلية
+                 نافذة التسجيل السريع حرفيًا. --}}
+            <div class="form-grid-2" id="reviewUnitFields" hidden>
+                <div class="field">
+                    <label class="field-label" for="review_unit_type">نوع الوحدة</label>
+                    <select class="input" id="review_unit_type">
+                        <option value="juz">جزء</option>
+                        <option value="hizb">حزب</option>
+                        <option value="half_hizb">نصف حزب</option>
+                        <option value="quarter_hizb">ربع حزب</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="review_unit_from">من</label>
+                    <select class="input" id="review_unit_from"></select>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="review_unit_to">إلى</label>
+                    <select class="input" id="review_unit_to"></select>
+                </div>
+            </div>
+            <p class="text-muted" id="reviewUnitPreview"></p>
+            <span class="field-error" id="reviewUnitError"></span>
+            <div class="form-grid-2">
                 <div class="field">
                     <label class="field-label" for="review_status">حالة الحفظ (اختياري)</label>
                     <select class="input" id="review_status" name="status">
@@ -448,16 +569,30 @@
     </div>
     </div>
 
-    {{-- إضافة سجلّ متن (S15) — نظير النموذج أعلاه لكن بوحدة "بيت" ولأيّ من
-         المتون الخمسة، مستقلّة كليًا عن سجلّات القرآن. --}}
-    <div class="card card-pad" style="margin-top: var(--space-5);">
-        <h2 class="mt-0">إضافة سجلّ متن (حفظ/مراجعة)</h2>
-        <form id="addPoemLogForm">
+    {{--
+        إضافة سجلّ متن (S15) — نظير نموذجَي "حفظ (درس)"/"مراجعة" أعلاه لكن
+        بوحدة "بيت" ولأيّ من المتون الخمسة، مستقلّة كليًا عن سجلّات القرآن.
+
+        (S25 — بطلب صريح من يحيى: "أفصل تسجيل الحفظ عن المراجعة زي ما فصلت
+        حق القرآن كمان"): كان نموذجًا واحدًا بقائمة "النوع" يبدّل بين حفظ/
+        مراجعة — نفس الشكل القديم الذي استُبدل للقرآن سابقًا (راجع تعليق
+        "إضافة سجلّ حفظ (درس) جديد" أعلاه). صار الآن بطاقتين منفصلتين جنبًا
+        لجنب في `.paired-forms-grid` (نفس شبكة نموذجَي القرآن حرفيًا)، كل
+        نوع نموذجه الخاص بلا قائمة "النوع" أصلًا — النوع مُثبَّت في JS
+        (raja poemLessonForm/poemReviewForm أدناه) تمامًا كما في lessonForm/
+        reviewForm. لا تغيير في الخادم: PoemRecitationLogController وStore
+        PoemRecitationLogRequest كما هما — كل النموذجين يرسلان لنفس المسار
+        `/dashboard/{id}/poem-logs` بنفس الحقول.
+    --}}
+    <div class="paired-forms-grid" style="margin-top: var(--space-5);">
+    <div class="card card-pad">
+        <h2 class="mt-0">إضافة سجلّ حفظ متن جديد</h2>
+        <form id="addPoemLessonLogForm">
             @csrf
             <div class="form-grid-2">
                 <div class="field">
-                    <label class="field-label" for="poem_log_poem_id">المتن</label>
-                    <select class="input" id="poem_log_poem_id" name="poem_id" required>
+                    <label class="field-label" for="poem_lesson_poem_id">المتن</label>
+                    <select class="input" id="poem_lesson_poem_id" name="poem_id" required>
                         <option value="">— اختر —</option>
                         @foreach ($allPoems as $poem)
                             <option value="{{ $poem->id }}" data-bayt-count="{{ $poem->bayt_count }}">{{ $poem->name }}</option>
@@ -466,27 +601,18 @@
                     <span class="field-error" data-for="poem_id"></span>
                 </div>
                 <div class="field">
-                    <label class="field-label" for="poem_log_type">النوع</label>
-                    <select class="input" id="poem_log_type" name="type" required>
-                        @foreach (\App\Models\RecitationLog::TYPES as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                    <span class="field-error" data-for="type"></span>
-                </div>
-                <div class="field">
-                    <label class="field-label" for="poem_log_from_bayt">من بيت (اختياري)</label>
-                    <input class="input" type="number" min="1" id="poem_log_from_bayt" name="from_bayt">
+                    <label class="field-label" for="poem_lesson_from_bayt">من بيت (اختياري)</label>
+                    <input class="input" type="number" min="1" id="poem_lesson_from_bayt" name="from_bayt">
                     <span class="field-error" data-for="from_bayt"></span>
                 </div>
                 <div class="field">
-                    <label class="field-label" for="poem_log_to_bayt">إلى بيت</label>
-                    <input class="input" type="number" min="1" id="poem_log_to_bayt" name="to_bayt" required>
+                    <label class="field-label" for="poem_lesson_to_bayt">إلى بيت</label>
+                    <input class="input" type="number" min="1" id="poem_lesson_to_bayt" name="to_bayt" required>
                     <span class="field-error" data-for="to_bayt"></span>
                 </div>
                 <div class="field">
-                    <label class="field-label" for="poem_log_status">حالة الحفظ (اختياري)</label>
-                    <select class="input" id="poem_log_status" name="status">
+                    <label class="field-label" for="poem_lesson_status">حالة الحفظ (اختياري)</label>
+                    <select class="input" id="poem_lesson_status" name="status">
                         <option value="">—</option>
                         @foreach (\App\Models\RecitationLog::STATUSES as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
@@ -495,19 +621,106 @@
                     <span class="field-error" data-for="status"></span>
                 </div>
                 <div class="field">
-                    <label class="field-label" for="poem_log_logged_at">التاريخ</label>
-                    <input class="input" type="date" id="poem_log_logged_at" name="logged_at"
+                    <label class="field-label" for="poem_lesson_logged_at">التاريخ</label>
+                    <input class="input" type="date" id="poem_lesson_logged_at" name="logged_at"
                            value="{{ now()->toDateString() }}" max="{{ now()->toDateString() }}">
                     <span class="field-error" data-for="logged_at"></span>
                 </div>
             </div>
             <div class="field">
-                <label class="field-label" for="poem_log_notes">ملاحظات (اختياري)</label>
-                <textarea class="input" id="poem_log_notes" name="notes" rows="2" maxlength="1000"></textarea>
+                <label class="field-label" for="poem_lesson_notes">ملاحظات (اختياري)</label>
+                <textarea class="input" id="poem_lesson_notes" name="notes" rows="2" maxlength="1000"></textarea>
                 <span class="field-error" data-for="notes"></span>
             </div>
-            <button type="submit" class="btn btn-primary" id="addPoemLogBtn">إضافة سجلّ المتن</button>
+            <button type="submit" class="btn btn-primary" id="addPoemLessonLogBtn">إضافة سجلّ الحفظ</button>
         </form>
+    </div>
+
+    <div class="card card-pad">
+        <h2 class="mt-0">إضافة سجلّ مراجعة متن جديد</h2>
+        <form id="addPoemReviewLogForm">
+            @csrf
+            <div class="form-grid-2">
+                <div class="field">
+                    <label class="field-label" for="poem_review_poem_id">المتن</label>
+                    <select class="input" id="poem_review_poem_id" name="poem_id" required>
+                        <option value="">— اختر —</option>
+                        @foreach ($allPoems as $poem)
+                            <option value="{{ $poem->id }}" data-bayt-count="{{ $poem->bayt_count }}">{{ $poem->name }}</option>
+                        @endforeach
+                    </select>
+                    <span class="field-error" data-for="poem_id"></span>
+                </div>
+                {{-- طريقة إدخال المراجعة: بالأبيات أو بالأبواب (S40 — طلب
+                     صريح من يحيى: "يصير عندنا الخيارين إما بالأبيات أو
+                     بالأبواب"، حصرًا في نموذج المراجعة هذا لا نموذج الحفظ
+                     المجاور). نفس آلية "طريقة الإدخال" (سورة/جزء) في نموذج
+                     مراجعة القرآن أعلاه حرفيًا: تبديل حاويتين بـ hidden، ثم
+                     تُترجَم الأبواب المختارة إلى from_bayt/to_bayt قبل
+                     التجميع في JS — فلا تغيير في الخادم إطلاقًا (لا زال كل
+                     من النموذجين يرسل نفس الحقول لنفس المسار). --}}
+                <div class="field">
+                    <label class="field-label" for="poem_review_entry_mode">طريقة الإدخال</label>
+                    <select class="input" id="poem_review_entry_mode">
+                        <option value="bayt">بالأبيات</option>
+                        <option value="chapter">بالأبواب</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid-2" id="poem_review_bayt_fields">
+                <div class="field">
+                    <label class="field-label" for="poem_review_from_bayt">من بيت (اختياري)</label>
+                    <input class="input" type="number" min="1" id="poem_review_from_bayt" name="from_bayt">
+                    <span class="field-error" data-for="from_bayt"></span>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="poem_review_to_bayt">إلى بيت</label>
+                    <input class="input" type="number" min="1" id="poem_review_to_bayt" name="to_bayt" required>
+                    <span class="field-error" data-for="to_bayt"></span>
+                </div>
+            </div>
+            <div class="form-grid-2" id="poem_review_chapter_fields" hidden>
+                <div class="field">
+                    <label class="field-label" for="poem_review_from_chapter">من باب</label>
+                    <select class="input" id="poem_review_from_chapter">
+                        <option value="">— اختر —</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="poem_review_to_chapter">إلى باب (اختياري — لمراجعة تمتدّ لعدّة أبواب)</label>
+                    <select class="input" id="poem_review_to_chapter">
+                        <option value="">— نفس الباب —</option>
+                    </select>
+                </div>
+            </div>
+            <p class="text-muted" id="poemReviewChapterHint"></p>
+            <span class="field-error" id="poemReviewChapterError"></span>
+            <div class="form-grid-2">
+                <div class="field">
+                    <label class="field-label" for="poem_review_status">حالة الحفظ (اختياري)</label>
+                    <select class="input" id="poem_review_status" name="status">
+                        <option value="">—</option>
+                        @foreach (\App\Models\RecitationLog::STATUSES as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <span class="field-error" data-for="status"></span>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="poem_review_logged_at">التاريخ</label>
+                    <input class="input" type="date" id="poem_review_logged_at" name="logged_at"
+                           value="{{ now()->toDateString() }}" max="{{ now()->toDateString() }}">
+                    <span class="field-error" data-for="logged_at"></span>
+                </div>
+            </div>
+            <div class="field">
+                <label class="field-label" for="poem_review_notes">ملاحظات (اختياري)</label>
+                <textarea class="input" id="poem_review_notes" name="notes" rows="2" maxlength="1000"></textarea>
+                <span class="field-error" data-for="notes"></span>
+            </div>
+            <button type="submit" class="btn btn-primary" id="addPoemReviewLogBtn">إضافة سجلّ المراجعة</button>
+        </form>
+    </div>
     </div>
 
     {{-- (S23.5 — استئناف تصميم صفحة الطالب بنمط هرماس): "الخط الزمني" (قائمة
@@ -522,23 +735,39 @@
         <h2 class="mt-0">السجلّات الأخيرة</h2>
         <div class="records-grid" id="timelineList">
             @forelse ($logs as $log)
+                {{-- (تصحيح خلل، بلاغ يحيى): القائمة صارت مدموجة من سجلّات
+                     القرآن (App\Models\RecitationLog) والمتون
+                     (App\Models\PoemRecitationLog) معًا — النوعان يتشاركان
+                     typeLabel()/type/status/notes/logged_at، فقط سطر العنوان
+                     (سورة+آية أو متن+بيت) وزرّ الحذف (مسار مختلف) يفترقان،
+                     عبر data-kind. --}}
+                @php $isPoemLog = $log instanceof \App\Models\PoemRecitationLog; @endphp
                 <div class="record-card" data-type="{{ $log->type }}">
                     <div class="record-card-head">
                         <span class="type-chip type-{{ $log->type }}">{{ $log->typeLabel() }}</span>
                         <span class="timeline-date">{{ $log->logged_at->format('Y-m-d') }}</span>
                     </div>
                     <p class="record-card-title">
-                        {{ $log->surah->name ?? '—' }}
-                        @if ($log->spansMultipleSurahs())
-                            {{-- مراجعة عابرة لعدّة سور (S16). --}}
-                            @if ($log->from_ayah)
-                                — من آية {{ $log->from_ayah }}
+                        @if ($isPoemLog)
+                            {{ $log->poem->name ?? '—' }}
+                            @if ($log->from_bayt)
+                                — من بيت {{ $log->from_bayt }} إلى بيت {{ $log->to_bayt }}
+                            @else
+                                — حتى بيت {{ $log->to_bayt }}
                             @endif
-                            إلى سورة {{ $log->toSurah->name ?? '—' }} آية {{ $log->to_ayah }}
-                        @elseif ($log->from_ayah)
-                            — آية {{ $log->from_ayah }} إلى {{ $log->to_ayah }}
                         @else
-                            — حتى آية {{ $log->to_ayah }}
+                            {{ $log->surah->name ?? '—' }}
+                            @if ($log->spansMultipleSurahs())
+                                {{-- مراجعة عابرة لعدّة سور (S16). --}}
+                                @if ($log->from_ayah)
+                                    — من آية {{ $log->from_ayah }}
+                                @endif
+                                إلى سورة {{ $log->toSurah->name ?? '—' }} آية {{ $log->to_ayah }}
+                            @elseif ($log->from_ayah)
+                                — آية {{ $log->from_ayah }} إلى {{ $log->to_ayah }}
+                            @else
+                                — حتى آية {{ $log->to_ayah }}
+                            @endif
                         @endif
                     </p>
                     @if ($log->notes)
@@ -550,7 +779,8 @@
                         @else
                             <span></span>
                         @endif
-                        <button type="button" class="btn btn-sm btn-ghost delete-log" data-id="{{ $log->id }}">حذف</button>
+                        <button type="button" class="btn btn-sm btn-ghost delete-log"
+                                data-id="{{ $log->id }}" data-kind="{{ $isPoemLog ? 'poem' : 'quran' }}">حذف</button>
                     </div>
                 </div>
             @empty
@@ -570,13 +800,30 @@
              buildChart() المستعملة لمنحنى الحفظ. --}}
         window.KeshfReviewProgressData = @json($reviewChartPoints);
         {{-- خريطة معرّف متن ⇐ نقاطه (S16) لا مصفوفة: JS يقرن كل مدخل بقماشه
-             الخاص (poemChart-{id}) بلا افتراض ترتيب متطابق مع الصفحة. --}}
+             الخاص (poemChart-{id}) بلا افتراض ترتيب متطابق مع الصفحة.
+             (S25) خريطة ثانية موازية لمنحنى المراجعة (poemReviewChart-{id}) —
+             نفس المبدأ تمامًا بنوع مختلف. --}}
         window.KeshfPoemChartData = @json($poemsData->pluck('chart_points', 'poem.id'));
+        window.KeshfPoemReviewChartData = @json($poemsData->pluck('review_chart_points', 'poem.id'));
+        {{-- خريطة معرّف متن ⇐ أبوابه (S40 — طلب صريح من يحيى: "مراجعة
+             بالأبواب") — تُستهلك في نموذج "إضافة سجلّ مراجعة متن" لملء
+             قائمتَي "من باب/إلى باب" بلا أي طلب شبكة إضافي. القيمة محسوبة
+             جاهزة في StudentController (متغيّر $poemChapters) لا هنا: تمرير
+             تعبير بمصفوفة متعددة المفاتيح (أي فاصلة) داخل @json(...) مباشرة
+             يُفسِد الترجمة (compileJson في Blade يُقسّم وسيطه بفاصلة عادية
+             بلا وعي بالأقواس) — راجع تعليق $poemChapters هناك. متن بلا أبواب
+             مزروعة بعد (كل المتون عدا طيبة النشر حاليًا) يُعطي مصفوفة فارغة. --}}
+        window.KeshfPoemChaptersData = @json($poemChapters);
     </script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const { apiFetch, apiFetchQueueable, toast, confirmDialog, withButtonLoading, applyFieldErrors } = window.KeshfApp;
         const studentId = {{ $student->student_id }};
+        // (تصحيح خلل خيارَي الجزء/الحزب المفقودَين من نموذج المراجعة هنا) —
+        // نفس مرجع الوحدات الجاهز من الخادم المستعمَل في نافذة التسجيل
+        // السريع بلوحة "قرآن" (القرار #54)، بلا أي طلب شبكة إضافي.
+        const QURAN_UNITS = @json($quranUnits);
+        const SURAHS_BY_ID = @json($surahs->keyBy('id')->map(fn ($s) => ['name' => $s->name]));
         // (تعديل الاسم أصبح ممكنًا من هذه الصفحة نفسها الآن) — كانت ثابتة،
         // صارت متغيّرة لتبقى محدَّثة بعد كل تعديل ناجح للاسم، لأن معالج حالة
         // العضوية أدناه يرسلها دومًا مع كل حفظ (UpdateStudentRequest يتطلّبها).
@@ -743,8 +990,85 @@
         reviewSurahSelect.addEventListener('change', updateReviewAyahMax);
         reviewToSurahSelect.addEventListener('change', updateReviewAyahMax);
 
+        /* ===== طريقة إدخال ثانية للمراجعة: بالجزء/الحزب (تصحيح خلل، راجع
+           تعليق النموذج أعلاه) — نفس منطق نافذة التسجيل السريع حرفيًا. ===== */
+        const reviewEntryMode = document.getElementById('review_entry_mode');
+        const reviewSurahFields = document.getElementById('reviewSurahFields');
+        const reviewUnitFields = document.getElementById('reviewUnitFields');
+        const reviewUnitType = document.getElementById('review_unit_type');
+        const reviewUnitFrom = document.getElementById('review_unit_from');
+        const reviewUnitTo = document.getElementById('review_unit_to');
+        const reviewUnitPreview = document.getElementById('reviewUnitPreview');
+        const reviewUnitError = document.getElementById('reviewUnitError');
+
+        function findReviewUnit(units, number) {
+            return units.find((u) => String(u.number) === String(number));
+        }
+
+        function fillReviewUnitSelects() {
+            const units = QURAN_UNITS[reviewUnitType.value] || [];
+            const options = units.map((u) => `<option value="${u.number}">${u.label}</option>`).join('');
+            reviewUnitFrom.innerHTML = `<option value="">— اختر —</option>${options}`;
+            reviewUnitTo.innerHTML = `<option value="">— نفس البداية —</option>${options}`;
+            reviewUnitFrom.value = '';
+            reviewUnitTo.value = '';
+            updateReviewUnitPreview();
+        }
+
+        function updateReviewUnitPreview() {
+            const units = QURAN_UNITS[reviewUnitType.value] || [];
+            const fromUnit = findReviewUnit(units, reviewUnitFrom.value);
+            reviewUnitError.textContent = '';
+
+            if (! fromUnit) {
+                reviewUnitPreview.textContent = '';
+                return;
+            }
+
+            const toUnit = findReviewUnit(units, reviewUnitTo.value) || fromUnit;
+            const fromSurahName = SURAHS_BY_ID[fromUnit.from_surah_id]?.name ?? '';
+            const toSurahName = SURAHS_BY_ID[toUnit.to_surah_id]?.name ?? '';
+            reviewUnitPreview.textContent = `المدى الفعلي: من ${fromSurahName} - ${fromUnit.from_ayah} إلى ${toSurahName} - ${toUnit.to_ayah}`;
+        }
+
+        function syncReviewEntryMode() {
+            const isUnitMode = reviewEntryMode.value === 'unit';
+            reviewSurahFields.hidden = isUnitMode;
+            reviewUnitFields.hidden = ! isUnitMode;
+            reviewUnitPreview.hidden = ! isUnitMode;
+
+            // نفس تحذير نافذة التسجيل السريع: حقل `required` مخفيّ بحاوية أصل
+            // قد يمنع الإرسال بصمت في بعض المتصفّحات، فيُبدَّل صراحةً هنا.
+            reviewSurahSelect.required = ! isUnitMode;
+            reviewToAyahInput.required = ! isUnitMode;
+
+            if (isUnitMode) fillReviewUnitSelects();
+        }
+
+        reviewEntryMode.addEventListener('change', syncReviewEntryMode);
+        reviewUnitType.addEventListener('change', fillReviewUnitSelects);
+        reviewUnitFrom.addEventListener('change', updateReviewUnitPreview);
+        reviewUnitTo.addEventListener('change', updateReviewUnitPreview);
+        syncReviewEntryMode();
+
         reviewForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            if (reviewEntryMode.value === 'unit') {
+                const units = QURAN_UNITS[reviewUnitType.value] || [];
+                const fromUnit = findReviewUnit(units, reviewUnitFrom.value);
+                if (! fromUnit) {
+                    reviewUnitError.textContent = 'اختر الوحدة (الجزء/الحزب) أولًا.';
+                    return;
+                }
+                const toUnit = findReviewUnit(units, reviewUnitTo.value) || fromUnit;
+
+                reviewSurahSelect.value = fromUnit.from_surah_id;
+                reviewToSurahSelect.value = (toUnit.to_surah_id !== fromUnit.from_surah_id) ? toUnit.to_surah_id : '';
+                reviewFromAyahInput.value = fromUnit.from_ayah;
+                reviewToAyahInput.value = toUnit.to_ayah;
+            }
+
             const payload = Object.fromEntries(new FormData(reviewForm).entries());
             payload.type = 'مراجعة';
             ['from_ayah', 'to_surah_id', 'status', 'notes'].forEach((k) => { if (!payload[k]) delete payload[k]; });
@@ -754,6 +1078,7 @@
                 const res = await withButtonLoading(btn, () => apiFetchQueueable(`/dashboard/${studentId}/logs`, { method: 'POST', body: payload }, 'سجلّ مراجعة'));
                 if (res.queued) {
                     reviewForm.reset();
+                    syncReviewEntryMode();
                 } else {
                     toast('تمت إضافة سجلّ المراجعة بنجاح.', 'success');
                     window.location.reload();
@@ -772,8 +1097,13 @@
             if (!btn) return;
             const confirmed = await confirmDialog('حذف هذا السجلّ؟ لا يمكن التراجع.');
             if (!confirmed) return;
+            // (تصحيح خلل — القائمة صارت مدموجة قرآن/متون معًا): كل نوع مسار
+            // حذف مختلف (data-kind من القالب أعلاه).
+            const endpoint = btn.dataset.kind === 'poem'
+                ? `/dashboard/${studentId}/poem-logs/${btn.dataset.id}`
+                : `/dashboard/${studentId}/logs/${btn.dataset.id}`;
             try {
-                await apiFetch(`/dashboard/${studentId}/logs/${btn.dataset.id}`, { method: 'DELETE' });
+                await apiFetch(endpoint, { method: 'DELETE' });
                 toast('تم حذف السجلّ.', 'success');
                 window.location.reload();
             } catch (error) {
@@ -781,36 +1111,134 @@
             }
         });
 
-        /* ===== إضافة سجلّ متن (S15) ===== */
-        const poemLogForm = document.getElementById('addPoemLogForm');
-        const poemSurahLikeSelect = document.getElementById('poem_log_poem_id');
-        const poemToBaytInput = document.getElementById('poem_log_to_bayt');
-        const poemFromBaytInput = document.getElementById('poem_log_from_bayt');
+        /* ===== إضافة سجلّ حفظ متن جديد (S15، فُصلت عن المراجعة S25 — طلب
+           صريح من يحيى: "أفصل تسجيل الحفظ عن المراجعة زي ما فصلت حق القرآن
+           كمان" — نفس مبدأ lessonForm/reviewForm أعلاه حرفيًا: كل نوع
+           نموذجه الخاص، والنوع مُثبَّت هنا في JS لا بقائمة "النوع"). ===== */
+        const poemLessonForm = document.getElementById('addPoemLessonLogForm');
+        const poemLessonPoemSelect = document.getElementById('poem_lesson_poem_id');
+        const poemLessonFromBaytInput = document.getElementById('poem_lesson_from_bayt');
+        const poemLessonToBaytInput = document.getElementById('poem_lesson_to_bayt');
 
-        poemSurahLikeSelect.addEventListener('change', () => {
-            const max = poemSurahLikeSelect.selectedOptions[0]?.dataset.baytCount || '';
-            poemToBaytInput.max = max;
-            poemFromBaytInput.max = max;
+        poemLessonPoemSelect.addEventListener('change', () => {
+            const max = poemLessonPoemSelect.selectedOptions[0]?.dataset.baytCount || '';
+            poemLessonFromBaytInput.max = max;
+            poemLessonToBaytInput.max = max;
         });
 
-        poemLogForm.addEventListener('submit', async (e) => {
+        poemLessonForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = Object.fromEntries(new FormData(poemLogForm).entries());
+            const payload = Object.fromEntries(new FormData(poemLessonForm).entries());
+            payload.type = 'حفظ';
             ['from_bayt', 'status', 'notes'].forEach((k) => { if (!payload[k]) delete payload[k]; });
             const poemId = payload.poem_id;
             delete payload.poem_id;
 
-            const btn = document.getElementById('addPoemLogBtn');
+            const btn = document.getElementById('addPoemLessonLogBtn');
             try {
                 await withButtonLoading(btn, () => apiFetch(`/dashboard/${studentId}/poem-logs`, {
                     method: 'POST',
                     body: { ...payload, poem_id: poemId },
                 }));
-                toast('تمت إضافة سجلّ المتن بنجاح.', 'success');
+                toast('تمت إضافة سجلّ الحفظ بنجاح.', 'success');
                 window.location.reload();
             } catch (error) {
                 if (error.status === 422 && error.errors) {
-                    applyFieldErrors(poemLogForm, error.errors);
+                    applyFieldErrors(poemLessonForm, error.errors);
+                } else if (error.status !== 419) {
+                    toast(error.message, 'error');
+                }
+            }
+        });
+
+        /* ===== إضافة سجلّ مراجعة متن جديد (S25) — نظير الحفظ أعلاه تمامًا. ===== */
+        const poemReviewForm = document.getElementById('addPoemReviewLogForm');
+        const poemReviewPoemSelect = document.getElementById('poem_review_poem_id');
+        const poemReviewFromBaytInput = document.getElementById('poem_review_from_bayt');
+        const poemReviewToBaytInput = document.getElementById('poem_review_to_bayt');
+
+        poemReviewPoemSelect.addEventListener('change', () => {
+            const max = poemReviewPoemSelect.selectedOptions[0]?.dataset.baytCount || '';
+            poemReviewFromBaytInput.max = max;
+            poemReviewToBaytInput.max = max;
+            if (poemReviewEntryMode.value === 'chapter') fillPoemReviewChapterSelects();
+        });
+
+        /* ===== طريقة إدخال ثانية للمراجعة: بالأبواب (S40 — طلب صريح من
+           يحيى) — نفس منطق "بالجزء/الحزب" في مراجعة القرآن أعلاه: تبديل
+           حاويتين، ثم تُترجَم الأبواب إلى from_bayt/to_bayt قبل التجميع. ===== */
+        const poemReviewEntryMode = document.getElementById('poem_review_entry_mode');
+        const poemReviewBaytFields = document.getElementById('poem_review_bayt_fields');
+        const poemReviewChapterFields = document.getElementById('poem_review_chapter_fields');
+        const poemReviewFromChapterSelect = document.getElementById('poem_review_from_chapter');
+        const poemReviewToChapterSelect = document.getElementById('poem_review_to_chapter');
+        const poemReviewChapterHint = document.getElementById('poemReviewChapterHint');
+        const poemReviewChapterError = document.getElementById('poemReviewChapterError');
+
+        function fillPoemReviewChapterSelects() {
+            const chapters = window.KeshfPoemChaptersData[poemReviewPoemSelect.value] || [];
+            const options = chapters
+                .map((c, i) => `<option value="${i}">${c.name} (من ${c.from_bayt} إلى ${c.to_bayt})</option>`)
+                .join('');
+            poemReviewFromChapterSelect.innerHTML = `<option value="">— اختر —</option>${options}`;
+            poemReviewToChapterSelect.innerHTML = `<option value="">— نفس الباب —</option>${options}`;
+            poemReviewChapterHint.textContent = (poemReviewPoemSelect.value && chapters.length === 0)
+                ? 'لا توجد أبواب مسجّلة لهذا المتن بعد.'
+                : '';
+        }
+
+        function syncPoemReviewEntryMode() {
+            const isChapterMode = poemReviewEntryMode.value === 'chapter';
+            poemReviewBaytFields.hidden = isChapterMode;
+            poemReviewChapterFields.hidden = ! isChapterMode;
+            poemReviewChapterError.textContent = '';
+            // نفس تحذير نموذج مراجعة القرآن أعلاه: `required` مخفيّ بحاوية
+            // أصل قد يمنع الإرسال بصمت في بعض المتصفّحات، فيُبدَّل صراحةً.
+            poemReviewToBaytInput.required = ! isChapterMode;
+
+            if (isChapterMode) {
+                fillPoemReviewChapterSelects();
+            } else {
+                poemReviewChapterHint.textContent = '';
+            }
+        }
+
+        poemReviewEntryMode.addEventListener('change', syncPoemReviewEntryMode);
+        syncPoemReviewEntryMode();
+
+        poemReviewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (poemReviewEntryMode.value === 'chapter') {
+                const chapters = window.KeshfPoemChaptersData[poemReviewPoemSelect.value] || [];
+                const fromChapter = chapters[poemReviewFromChapterSelect.value];
+                if (! fromChapter) {
+                    poemReviewChapterError.textContent = 'اختر الباب أولًا.';
+                    return;
+                }
+                const toChapter = chapters[poemReviewToChapterSelect.value] || fromChapter;
+
+                poemReviewFromBaytInput.value = fromChapter.from_bayt;
+                poemReviewToBaytInput.value = toChapter.to_bayt;
+            }
+
+            const payload = Object.fromEntries(new FormData(poemReviewForm).entries());
+            payload.type = 'مراجعة';
+            ['from_bayt', 'status', 'notes'].forEach((k) => { if (!payload[k]) delete payload[k]; });
+            const poemId = payload.poem_id;
+            delete payload.poem_id;
+
+            const btn = document.getElementById('addPoemReviewLogBtn');
+            try {
+                await withButtonLoading(btn, () => apiFetch(`/dashboard/${studentId}/poem-logs`, {
+                    method: 'POST',
+                    body: { ...payload, poem_id: poemId },
+                }));
+                toast('تمت إضافة سجلّ المراجعة بنجاح.', 'success');
+                window.location.reload();
+            } catch (error) {
+                if (error.status === 422 && error.errors) {
+                    applyFieldErrors(poemReviewForm, error.errors);
                 } else if (error.status !== 419) {
                     toast(error.message, 'error');
                 }

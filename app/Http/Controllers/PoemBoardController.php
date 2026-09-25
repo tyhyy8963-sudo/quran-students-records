@@ -56,6 +56,11 @@ class PoemBoardController extends Controller
 {
     public function index(Request $request)
     {
+        // بحث بالاسم (طلب صريح من يحيى: "ضيف بحث باسم الطالب زي الموجود في
+        // صفحة القرآن في المتون والتحضير والسجلات") — نفس نمط RecordsController
+        // حرفيًا.
+        $search = trim((string) $request->query('q'));
+
         $poems = Poem::orderBy('name')->get();
         $circles = Circle::orderBy('name')->get();
 
@@ -90,6 +95,10 @@ class PoemBoardController extends Controller
             ->whereHas('poemRecitationLogs', fn ($q) => $q->whereIn('poem_id', $filterPoemIds))
             ->with(['circle', 'poemRecitationLogs' => fn ($q) => $q->whereIn('poem_id', $filterPoemIds)])
             ->orderBy('student_name');
+
+        if ($search !== '') {
+            $studentsQuery->where('student_name', 'like', '%'.$search.'%');
+        }
 
         if ($circleIds) {
             $studentsQuery->where(function ($q) use ($wantsNoneCircle, $realCircleIds) {
@@ -141,9 +150,15 @@ class PoemBoardController extends Controller
             $students->pluck('student.student_id')
         );
 
+        // شارة عدد الطلاب في الشريط العلوي (طلب صريح من يحيى: "ضيف عداد عدد
+        // الطلاب الموجود في تبويب القرآن لبقية التبويبات") — نفس استعلام
+        // StudentController::index() حرفيًا (Student::count()، معزول تلقائيًا
+        // بحلقة المعلّم عبر TeacherScope).
+        $studentsCount = Student::count();
+
         return view('poems.index', compact(
             'poems', 'circles', 'selectedPoemIds', 'circleIds', 'progressMin', 'progressMax', 'students',
-            'today', 'attendanceTodayByStudent'
+            'today', 'attendanceTodayByStudent', 'search', 'studentsCount'
         ));
     }
 }

@@ -25,7 +25,7 @@ class PoemBoardTest extends TestCase
 
     private User $teacher;
     private Poem $poem;      // تحفة الأطفال — 61 بيتًا
-    private Poem $otherPoem; // الجزرية — 107 أبيات
+    private Poem $otherPoem; // الجزرية — 109 أبيات (بعد تصحيح S39: كانت 107)
 
     protected function setUp(): void
     {
@@ -175,14 +175,14 @@ class PoemBoardTest extends TestCase
     {
         $student = Student::create(['student_name' => 'متعدّد المتون', 'teacher_id' => $this->teacher->id]);
         $this->trackPoem($student, $this->poem, 10);      // 10/61 → 16.4%
-        $this->trackPoem($student, $this->otherPoem, 10); // 10/107 → 9.3%
+        $this->trackPoem($student, $this->otherPoem, 10); // 10/109 → 9.2%
 
         $response = $this->actingAs($this->teacher)
             ->get('/poems?poem_id[]='.$this->poem->id.'&poem_id[]='.$this->otherPoem->id);
 
         $response->assertSee('متعدّد المتون');
         $response->assertSee('16.4%', false);
-        $response->assertSee('9.3%', false);
+        $response->assertSee('9.2%', false);
     }
 
     /**

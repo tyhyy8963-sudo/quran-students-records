@@ -1,25 +1,22 @@
 import {
     Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip,
+    BarController, BarElement,
 } from 'chart.js';
 
 Chart.register(
     LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip,
+    BarController, BarElement,
 );
 
 /**
  * منحنيات التقدّم (S8، وسِّعت في S16) — مُجمَّع كملف Vite مستقل عن app.js،
  * فلا تحمّل صفحات الدخول والتسجيل مكتبة رسم بياني لن تستخدمها أبدًا.
  *
- * منذ S16 الملف يبني عدّة منحنيات لا منحنى واحدًا (حفظ، مراجعة، وواحد لكل
- * متن يتتبّعه الطالب)، وكلّها تشترك تبديل تجميع واحدًا (يومي/أسبوعي/شهري)
- * عبر buildChart()/aggregate() ومتغيّر currentGranularity المشترك.
- *
- * (S23.5، تعديل لاحق بطلب يحيى): بطاقة "نشاط المراجعة الشهري" (أعمدة شهرية
- * مستقلّة عن تبديل التجميع، عبر buildReviewMonthlyChart) أُلغيت نهائيًا من
- * صفحة الطالب — الدالّة نفسها حُذفت من هذا الملف لأنها لم تعد تُستدعى من أي
- * مكان. منحنى المراجعة التراكمي (reviewProgressChart) لم يتأثّر، وصار له
- * الآن زرّ تبديل تجميع مرئي خاصّ به في بطاقته أيضًا (بجانب زرّ منحنى الحفظ)،
- * وكلاهما يُحدَّث معًا لأن الاثنين داخل نفس مصفوفة controllers أدناه.
+ * منذ S16 الملف يبني عدّة منحنيات لا منحنى واحدًا (حفظ، وواحد لكل متن
+ * يتتبّعه الطالب)، وكلّها تشترك تبديل تجميع واحدًا (يومي/أسبوعي/شهري) عبر
+ * buildChart()/aggregate(). منحنى المراجعة مستثنى من هذا التشارك منذ تحويله
+ * إلى أعمدة شهرية للمقارنة (راجع buildReviewMonthlyChart أسفله) — شهري
+ * بطبيعته أصلًا، فلا معنى لتبديل يومي/أسبوعي عليه.
  *
  * S19.5 — ألوان كل منحنى كانت قيمًا سداسية عشرية ثابتة داخل هذا الملف (مثل
  * #1d3557 لعمود المراجعة) لا صلة لها بنظام التصميم في app.css، وبلا أي رابط
@@ -141,10 +138,16 @@ function buildChart(canvas, rawPoints, opts) {
     const { label, color, bg, tooltipSuffix } = opts;
     const palette = chartPalette();
 
+    // (S25 — بطلب صريح من يحيى: "2026-04-20 صعّبت علي معرفة اليوم والشهر
+    // بسرعة") — تُعرض label العربية المقروءة ("20 أبريل 2026") التي أضافتها
+    // الخلفية (MemorizationProgress/ReviewProgress/PoemProgress::timeline())
+    // على محور السينات والتلميح، بدل date الخام (Y-m-d) الذي يبقى مستعملاً
+    // داخليًا فقط في aggregate() أدناه للتجميع الأسبوعي/الشهري. p.date احتياط
+    // لبيانات قديمة مخزَّنة بلا label (لن يحدث فعليًا، لكن أسلم من انهيار).
     const chart = new Chart(canvas, {
         type: 'line',
         data: {
-            labels: rawPoints.map((p) => p.date),
+            labels: rawPoints.map((p) => p.label || p.date),
             datasets: [{
                 label,
                 data: rawPoints.map((p) => p.percent),
@@ -202,7 +205,8 @@ function buildChart(canvas, rawPoints, opts) {
         rawPoints,
         setGranularity(granularity) {
             const points = aggregate(rawPoints, granularity);
-            this.chart.data.labels = points.map((p) => p.date);
+            // نفس تبديل buildChart أعلاه (S25): label العربية المقروءة لا date الخام.
+            this.chart.data.labels = points.map((p) => p.label || p.date);
             this.chart.data.datasets[0].data = points.map((p) => p.percent);
             this.chart.update();
         },
@@ -212,17 +216,98 @@ function buildChart(canvas, rawPoints, opts) {
     };
 }
 
+/**
+ * عمود شهري لعدد الأرباع التي مسّتها أي مراجعة خلال كل شهر (S16، حلّ محلّ
+ * منحنى المراجعة التراكمي السابق بطلب صاحب المنظومة بعد ملاحظته أن التراكم
+ * لا يعكس طبيعة المراجعة الحقيقية — المراجعة نشاط متكرّر، فمقارنة "كم عمل
+ * فعليًا هذا الشهر" شهرًا بشهر أوضح تربويًا من نسبة تراكمية تخلط الكلّي
+ * بالشهري). مستقلّ تمامًا عن buildChart()/aggregate() ولا يُضاف إلى مصفوفة
+ * controllers أدناه لأنه لا يشارك تبديل التجميع أصلًا.
+ *
+ * @param {HTMLCanvasElement|null} canvas
+ * @param {{month: string, label: string, quarters: number}[]} rawPoints
+ */
+function buildReviewMonthlyChart(canvas, rawPoints) {
+    if (!canvas || !rawPoints || rawPoints.length === 0) {
+        return null;
+    }
+
+    const palette = chartPalette();
+    // أزرق معلوماتي — نفس دلالة .type-chip.type-مراجعة في السجلّ الزمني
+    // (قسم 19 من app.css)، بدل اللون الكحلي المنفصل السابق (#1d3557) الذي
+    // لا صلة له بهذا الاصطلاح القائم أصلًا في الواجهة.
+    const color = palette.review;
+    const maxQuarters = Math.max(...rawPoints.map((p) => p.quarters));
+
+    const chart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: rawPoints.map((p) => p.label),
+            datasets: [{
+                label: 'أرباع رُوجعت',
+                data: rawPoints.map((p) => p.quarters),
+                backgroundColor: color,
+                borderRadius: 4,
+                maxBarThickness: 48,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        // مكافئ الأحزاب (كل 4 أرباع = حزب) معلومة عرضية تفيد
+                        // المعلّم بجانب رقم الأرباع الخام وحده.
+                        label: (ctx) => {
+                            const quarters = ctx.parsed.y;
+                            const hizb = (quarters / 4).toFixed(quarters % 4 === 0 ? 0 : 2);
+
+                            return `${quarters} ربعًا (≈ ${hizb} حزب) رُوجعت هذا الشهر`;
+                        },
+                    },
+                },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    // سقف أوسع من أعلى عمود بمقدار الربع تقريبًا (حد أدنى 4 —
+                    // حزب واحد) بدل مقياس تلقائي محض قد يسحق الفروق بين شهر
+                    // نشط وآخر شبه خامل.
+                    suggestedMax: Math.max(4, Math.ceil(maxQuarters * 1.25)),
+                    ticks: { precision: 0, color: palette.muted },
+                    title: { display: true, text: 'عدد الأرباع الممسوسة', color: palette.muted },
+                    grid: { color: palette.grid },
+                },
+                x: {
+                    title: { display: true, text: 'الشهر', color: palette.muted },
+                    ticks: { color: palette.muted },
+                    grid: { display: false },
+                },
+            },
+        },
+    });
+
+    return { chart, rawPoints, destroy() { this.chart.destroy(); } };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     let controllers = [];
+    let reviewChart = null;
     let currentGranularity = 'daily';
 
     const memorizationCanvas = document.getElementById('progressChart');
-    // منحنى تقدّم المراجعة (S23.5) — تراكمي مثل منحنى الحفظ تمامًا، بنفس
-    // buildChart() المشتركة، فيدخل ضمن مصفوفة controllers أدناه ويشارك
-    // تبديل التجميع يومي/أسبوعي/شهري مع منحنى الحفظ (زرّان منفصلان في
-    // بطاقتَين، لكن حالة واحدة مشتركة في الخلفية).
+    const reviewCanvas = document.getElementById('reviewMonthlyChart');
+    // منحنى تقدّم المراجعة (S23.5) — تراكمي مثل منحنى الحفظ تمامًا، بخلاف
+    // عمود reviewCanvas أعلاه (شهري، مستقلّ عن تبديل التجميع). عنصر Canvas
+    // مختلف عمدًا (reviewProgressChart لا reviewMonthlyChart) لأن الاثنين
+    // يظهران معًا الآن جنبًا لجنب في شبكة "التحليلات والإحصائيات".
     const reviewProgressCanvas = document.getElementById('reviewProgressChart');
     const poemChartData = window.KeshfPoemChartData || {};
+    // منحنيات مراجعة المتون (S25 — بطلب صريح من يحيى: "أبغى للمتن منحيين...
+    // للحفظ منحنى وللمراجعة منحنى") — نظير poemChartData أعلاه تمامًا، بنوع
+    // "مراجعة" بدل "حفظ"؛ قماش كل متن هنا poemReviewChart-{id} لا poemChart-{id}.
+    const poemReviewChartData = window.KeshfPoemReviewChartData || {};
 
     /**
      * يبني كل منحنيات الصفحة من الصفر (أو يعيد بناءها بعد هدم النسخة
@@ -252,9 +337,13 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         if (reviewProgressChart) controllers.push(reviewProgressChart);
 
-        // منحنى لكل متن يملك نقاطًا فعلية — الخريطة (poem_id ⇐ نقاط) مبنيّة في
-        // الخلفية بنفس ترتيب لا معنى له هنا، فقماش كل متن يُقرَن بمعرّفه مباشرة
-        // (poemChart-{id}) لا بترتيب ظهوره.
+        // عمود المراجعة الشهري (S16) — مستقلّ عن مصفوفة controllers لأنه لا
+        // يشارك تبديل التجميع أعلاه (شهري بطبيعته أصلًا).
+        reviewChart = buildReviewMonthlyChart(reviewCanvas, window.KeshfReviewMonthlyData);
+
+        // منحنى حفظ لكل متن يملك نقاطًا فعلية — الخريطة (poem_id ⇐ نقاط) مبنيّة
+        // في الخلفية بنفس ترتيب لا معنى له هنا، فقماش كل متن يُقرَن بمعرّفه
+        // مباشرة (poemChart-{id}) لا بترتيب ظهوره.
         Object.keys(poemChartData).forEach((poemId) => {
             const poemColor = chartPalette().poem;
             const poemChart = buildChart(
@@ -265,6 +354,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (poemChart) controllers.push(poemChart);
         });
 
+        // منحنى مراجعة لكل متن (S25) — نظير الحفظ أعلاه تمامًا، بلون المراجعة
+        // الدلالي نفسه (palette.review، أزرق معلوماتي، نفس منحنى "تقدّم
+        // المراجعة" للقرآن) وقماش poemReviewChart-{id}. يُضاف لنفس مصفوفة
+        // controllers فيشارك مبدّل التجميع يومي/أسبوعي/شهري المشترك — لا زرّ
+        // إضافي مطلوب هنا.
+        Object.keys(poemReviewChartData).forEach((poemId) => {
+            const reviewColor = chartPalette().review;
+            const poemReviewChart = buildChart(
+                document.getElementById(`poemReviewChart-${poemId}`),
+                poemReviewChartData[poemId],
+                { label: 'نسبة المراجعة', color: reviewColor, bg: hexToRgba(reviewColor, 0.15), tooltipSuffix: ' من المتن حتى هذا التاريخ' },
+            );
+            if (poemReviewChart) controllers.push(poemReviewChart);
+        });
+
         if (currentGranularity !== 'daily') {
             controllers.forEach((controller) => controller.setGranularity(currentGranularity));
         }
@@ -272,17 +376,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderCharts();
 
-    if (controllers.length === 0) {
+    if (controllers.length === 0 && !reviewChart) {
         return;
     }
 
-    // أزرار تبديل التجميع (S23.5: صارت مجموعتَين — واحدة فوق منحنى الحفظ
-    // وأخرى فوق منحنى المراجعة، بطلب يحيى — بدل مجموعة واحدة فقط سابقًا).
-    // المطابقة هنا بقيمة data-granularity لا بهويّة الزرّ نفسه (b === button)
-    // كما كانت سابقًا: التبديل بمجموعة واحدة فقط كان يكفي فيها هذا الفرق،
-    // لكنه كان سيترك المجموعة الأخرى بلا تحديث بصري (الزرّ "النشط" يبقى
-    // القديم فيها) لو تُرك كما هو الآن مع مجموعتين. المطابقة بالقيمة تُبقي
-    // كل الأزرار المتماثلة (في كل المجموعات) متوافقة الحالة معًا دومًا.
     const granularityButtons = document.querySelectorAll('[data-granularity]');
     granularityButtons.forEach((button) => {
         button.addEventListener('click', () => {
@@ -291,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             controllers.forEach((controller) => controller.setGranularity(granularity));
 
             granularityButtons.forEach((b) => {
-                b.classList.toggle('is-active', b.dataset.granularity === granularity);
+                b.classList.toggle('is-active', b === button);
             });
         });
     });
@@ -302,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ولا يفقد شيئًا لأن رسم Chart.js رخيص لهذا الحجم من البيانات.
     window.addEventListener('keshf:theme-change', () => {
         controllers.forEach((controller) => controller.destroy());
+        if (reviewChart) reviewChart.destroy();
         renderCharts();
     });
 });

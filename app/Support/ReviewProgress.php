@@ -312,8 +312,15 @@ class ReviewProgress
             $points[optional($log->logged_at)->toDateString()] = $this->percentageFromMergedRanges($merged);
         }
 
+        // (S25 — نفس تعديل MemorizationProgress::timeline() أعلاه، بطلب
+        // يحيى: صعوبة قراءة "2026-04-20" بسرعة) — label عربي مقروء للعرض،
+        // date يبقى بصيغته الأصلية لمنطق الفرز/التجميع في الواجهة الأمامية.
         return collect($points)
-            ->map(fn (float $percent, string $date) => ['date' => $date, 'percent' => $percent])
+            ->map(fn (float $percent, string $date) => [
+                'date'    => $date,
+                'label'   => \Carbon\Carbon::parse($date)->translatedFormat('j F Y'),
+                'percent' => $percent,
+            ])
             ->values();
     }
 

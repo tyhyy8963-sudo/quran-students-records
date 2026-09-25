@@ -63,11 +63,17 @@ class RecordsController extends Controller
         // تناسقًا مع لوحة "قرآن"، لا قرارًا منتجًا مستقلًا.
         $students = $query->paginate(50)->withQueryString();
 
+        // شارة عدد الطلاب في الشريط العلوي (طلب صريح من يحيى: "ضيف عداد عدد
+        // الطلاب الموجود في تبويب القرآن لبقية التبويبات") — نفس استعلام
+        // StudentController::index() حرفيًا.
+        $studentsCount = Student::count();
+
         return view('records.index', [
-            'students'  => $students,
-            'circles'   => $circles,
-            'search'    => $search,
-            'circleIds' => $circleIds,
+            'students'      => $students,
+            'circles'       => $circles,
+            'search'        => $search,
+            'circleIds'     => $circleIds,
+            'studentsCount' => $studentsCount,
         ]);
     }
 }

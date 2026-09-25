@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="page-title-row">
-        <h1 class="mt-0">لوحة متابعة الطلاب</h1>
+        <h1 class="mt-0">القرآن</h1>
         <div class="cluster">
             {{-- استيراد CSV (S11) أو إكسل حقيقي .xlsx/.xls (S17) — نفس المسار
                  ونفس نموذج الأعمدة (اسم الطالب، الحلقة)، الصيغة تُكتشَف من

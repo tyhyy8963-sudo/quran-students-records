@@ -24,6 +24,10 @@ class AttendanceController extends Controller
         $date = $request->query('date', now()->toDateString());
         $circleId = $request->query('circle_id');
 
+        // بحث بالاسم (طلب صريح من يحيى: "ضيف بحث باسم الطالب زي الموجود في
+        // صفحة القرآن في المتون والتحضير والسجلات") — نفس نمط RecordsController.
+        $search = trim((string) $request->query('q'));
+
         // whereDate لا where('date', $date): نفس عطل كاست "date" الموثَّق في
         // store() أدناه.
         $studentsQuery = Student::with([
@@ -36,14 +40,25 @@ class AttendanceController extends Controller
             $studentsQuery->where('circle_id', $circleId);
         }
 
+        if ($search !== '') {
+            $studentsQuery->where('student_name', 'like', '%'.$search.'%');
+        }
+
         $students = $studentsQuery->get();
         $circles = Circle::orderBy('name')->get();
 
+        // شارة عدد الطلاب في الشريط العلوي (طلب صريح من يحيى) — نفس استعلام
+        // StudentController::index() (Student::count()، معزول تلقائيًا
+        // بحلقة المعلّم عبر TeacherScope).
+        $studentsCount = Student::count();
+
         return view('attendance.index', [
-            'students' => $students,
-            'circles'  => $circles,
-            'date'     => $date,
-            'circleId' => $circleId,
+            'students'      => $students,
+            'circles'       => $circles,
+            'date'          => $date,
+            'circleId'      => $circleId,
+            'search'        => $search,
+            'studentsCount' => $studentsCount,
         ]);
     }
 
